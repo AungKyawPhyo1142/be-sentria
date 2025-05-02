@@ -1,0 +1,5 @@
+# Build Directory
+/build
+
+# Lock Files
+pnpm-lock.yaml

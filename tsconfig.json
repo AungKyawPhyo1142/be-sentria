@@ -1,0 +1,32 @@
+{
+    "ts-node": {
+      "files": true
+    },
+    "compilerOptions": {
+      "target": "esnext",
+      "module": "commonjs",
+      "rootDir": "./src",
+      "baseUrl": "./src",
+      "paths": {
+        "@/*": ["./*"],
+        "@controllers/*": ["./controllers/*"],
+        "@middlewares/*": ["./middlewares/*"],
+        "@routes/*": ["./routes/*"],
+        "@services/*": ["./services/*"]
+      },
+      "outDir": "./build",
+      "sourceMap": true,
+      "esModuleInterop": true,
+      "forceConsistentCasingInFileNames": true,
+      "strict": true,
+      "noImplicitAny": true,
+      "noUnusedParameters": true,
+      "noUnusedLocals": true,
+      "strictNullChecks": true,
+      "skipLibCheck": true,
+      "removeComments": true
+    },
+    "include": ["./src/**/*"],
+    "exclude": ["./docs", "./prisma"]
+  }
+  
