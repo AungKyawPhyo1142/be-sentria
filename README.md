@@ -1,5 +1,4 @@
-# BE-WESTRIDE-LMS
-
+# BE-SENTRIA
 ## Project Overview
 
 Sentria is a community-driven disaster response platform that helps people stay safe and connected during natural disasters. Users can report incidents with map-based locations, share real-time updates, and request or offer help to others nearby. The platform intelligently aggregates post data to identify affected zones and generate safe travel routes that avoid danger areas. It also provides access to vital resources such as emergency hotlines, shelter locations, and survival guides—all powered by free and open-source technologies.
