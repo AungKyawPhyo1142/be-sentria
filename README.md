@@ -16,8 +16,8 @@ Before you begin, ensure you have the following installed on your machine:
 1. **Clone the repository**:
 
    ```bash
-   git clone https://github.com/WeStride-Thailand/be-westride-lms.git
-   cd be-westride-lms
+   git clone https://github.com/AungKyawPhyo1142/be-sentria.git
+   cd be-sentria
    ```
 
 2. **Set up environment variables**:
