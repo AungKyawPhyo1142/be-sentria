@@ -5,7 +5,7 @@ export const ENV = {
   JWT_SECRET: process.env.JWT_SECRET || 'sentria',
   NODE_ENV: (process.env.NODE_ENV || 'dev') as 'local' | 'dev' | 'production',
   PORT: process.env.PORT || 3000,
-  RERESH_TOKEN_SECRET: process.env.RERESH_TOKEN_SECRET || 'sentria',
+  REFRESH_TOKEN_SECRET: process.env.RERESH_TOKEN_SECRET || 'sentria',
 };
 
 if (ENV.NODE_ENV === 'local' && !process.env.CORS_ORIGIN) {

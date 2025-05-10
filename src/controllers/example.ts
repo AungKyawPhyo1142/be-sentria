@@ -1,6 +1,6 @@
 // Responsible for receiving & returning data to routes
-import * as exampleService from '@services/example';
 import { InternalServerError, ValidationError } from '@/utils/errors';
+import * as exampleService from '@services/example';
 import { NextFunction, Request, Response } from 'express';
 import { ZodError, number, object, string } from 'zod';
 

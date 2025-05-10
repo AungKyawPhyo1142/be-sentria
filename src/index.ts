@@ -6,11 +6,11 @@ import expressListRoutes from 'express-list-routes';
 import helmet from 'helmet';
 import { ENV } from './env';
 import logger from './logger';
-import gateway from './routes/gateway';
-import { NotFoundError } from './utils/errors';
+import errorHandler from './middlewares/error-handler';
 import jsonResponse from './middlewares/json-response';
 import networkLog from './middlewares/network-log';
-import errorHandler from './middlewares/error-handler';
+import gateway from './routes/gateway';
+import { NotFoundError } from './utils/errors';
 
 const app = express();
 
@@ -29,7 +29,7 @@ app.use(json());
 app.use(helmet());
 app.use(urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(jsonResponse)
+app.use(jsonResponse);
 app.use(networkLog);
 
 app.get('/', (_req, res) => {

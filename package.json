@@ -8,17 +8,18 @@
   "scripts": {
     "test": "echo \"Success: no test specified\" && exit 0",
     "build": "tsc --build --listEmittedFiles && tsc-alias && echo \"Success: build completed\"",
-    "dev": "pnpm install  && pnpm start:dev",
+    "dev": "pnpm install && pnpm prisma:prepare && pnpm start:dev",
     "prisma:prepare": "pnpx prisma@6.5.0 generate && pnpx prisma@6.5.0 migrate deploy",
     "start:dev": "nodemon --exec node -r ts-node/register -r tsconfig-paths/register --env-file=.env ./src/index.ts",
     "start:prod": "node ./build/index.js",
     "format": "prettier . --write --config ./.prettierrc && echo \"Success: format completed\"",
     "lint": "prettier --check . --config ./.prettierrc && eslint --max-warnings 0 . && echo \"Success: your code is clean\"",
+    "clean": "npm run lint && npm run format",
     "prepare": "node -e \"if (process.env.NODE_ENV !== 'production'){process.exit(1)} \" || husky"
   },
-  "author": "WeStride",
+  "author": "Sentria",
   "license": "ISC",
-  "description": "Back-end project for WeStride LMS",
+  "description": "Back-end project for Sentria",
   "dependencies": {
     "@prisma/client": "^6.5.0",
     "@types/express-fileupload": "^1.5.1",
