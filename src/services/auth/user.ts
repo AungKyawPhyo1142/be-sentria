@@ -10,6 +10,7 @@ type UserInfo = {
   email: string;
   firstName: string;
   lastName: string;
+  username: string;
   userId: number;
 };
 
@@ -21,9 +22,8 @@ const auth = (user: Express.Request['user']) => {
     createdAt: user.created_at,
     email: user.email,
     firstName: user.firstName,
-
+    username: user.username,
     lastName: user.lastName,
-
     userId: user.id,
   };
   return userInfo;
@@ -33,7 +33,10 @@ const registerUser = async (
   email: string,
   firstName: string,
   lastName: string,
+  username: string,
+  birthday: Date,
   password: string,
+  country: string,
 ) => {
   try {
     const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -46,6 +49,9 @@ const registerUser = async (
         email,
         firstName,
         lastName,
+        username,
+        birthday,
+        country,
         password: passwordHash,
       },
     });
@@ -53,6 +59,7 @@ const registerUser = async (
       email: result.email,
       firstName: result.firstName,
       lastName: result.lastName,
+      username: result.username,
     };
   } catch (error) {
     logger.error('Error register user', error);
@@ -80,12 +87,12 @@ const loginUser = async (
 
     const refershToken = rememberMe
       ? jwt.sign(
-          {
-            userId: result.id,
-          },
-          ENV.REFRESH_TOKEN_SECRET,
-          { expiresIn: '30d' },
-        )
+        {
+          userId: result.id,
+        },
+        ENV.REFRESH_TOKEN_SECRET,
+        { expiresIn: '30d' },
+      )
       : undefined;
 
     const token = jwt.sign(
@@ -100,9 +107,8 @@ const loginUser = async (
       createdAt: result.created_at,
       email: result.email,
       firstName: result.firstName,
-
+      username: result.username,
       lastName: result.lastName,
-
       userId: result.id,
     };
     return { refershToken, token, userInfo };

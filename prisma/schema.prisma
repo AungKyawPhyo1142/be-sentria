@@ -8,13 +8,19 @@ generator client {
 }
 
 model User {
-    id            Int       @id @default(autoincrement())
-    email         String    @unique
-    firstName     String
-    lastName      String
-    profile_image String?
-    password      String
-    created_at    DateTime  @default(now())
-    updated_at    DateTime  @updatedAt
-    deleted_at    DateTime?
+    id                Int       @id @default(autoincrement())
+    email             String    @unique
+    email_verified    Boolean   @default(false)
+    email_verified_at DateTime?
+    verified_profile  Boolean   @default(false)
+    birthday          DateTime
+    country           String    @default("")
+    firstName         String
+    lastName          String
+    username          String    @unique
+    profile_image     String?
+    password          String
+    created_at        DateTime  @default(now())
+    updated_at        DateTime  @updatedAt
+    deleted_at        DateTime?
 }
