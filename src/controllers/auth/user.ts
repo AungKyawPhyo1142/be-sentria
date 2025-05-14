@@ -22,7 +22,7 @@ const loginSchema = object({
 
 const resendEmailSchema = object({
   email: string().email(),
-})
+});
 
 const auth = (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -39,9 +39,15 @@ const registerUser = async (
   next: NextFunction,
 ) => {
   try {
-    const { email, firstName, lastName, password, username, country, birthday } = registerUserSchema.parse(
-      req.body,
-    );
+    const {
+      email,
+      firstName,
+      lastName,
+      password,
+      username,
+      country,
+      birthday,
+    } = registerUserSchema.parse(req.body);
 
     const response = await userService.registerUser(
       email,

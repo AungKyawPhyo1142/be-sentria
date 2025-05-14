@@ -2,7 +2,11 @@ import { ENV } from '@/env';
 import { sendEmail } from '@/helpers/sendEmail';
 import prisma from '@/libs/prisma';
 import logger from '@/logger';
-import { AuthenticationError, ConflictError, NotFoundError } from '@/utils/errors';
+import {
+  AuthenticationError,
+  ConflictError,
+  NotFoundError,
+} from '@/utils/errors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -58,9 +62,11 @@ const registerUser = async (
     });
 
     // generate verification token
-    const emailVerificationToken = jwt.sign({ userId: result.id },
-      ENV.JWT_SECRET, { expiresIn: `24hr` }
-    )
+    const emailVerificationToken = jwt.sign(
+      { userId: result.id },
+      ENV.JWT_SECRET,
+      { expiresIn: `24hr` },
+    );
 
     const verifcationURL = `${ENV.FRONTEND_URL}/auth/verify-email/${emailVerificationToken}`;
 
@@ -69,11 +75,17 @@ const registerUser = async (
       name: `${firstName} ${lastName}`,
       email: email,
       verificationLink: verifcationURL,
-      currentYear: new Date().getFullYear()
-    }
+      currentYear: new Date().getFullYear(),
+    };
 
     // send verification email here
-    await sendEmail('email_verification_template_v1', 'email_verification', [email], 'Sentria - Email Verification', data);
+    await sendEmail(
+      'email_verification_template_v1',
+      'email_verification',
+      [email],
+      'Sentria - Email Verification',
+      data,
+    );
 
     return {
       email: result.email,
@@ -107,12 +119,12 @@ const loginUser = async (
 
     const refershToken = rememberMe
       ? jwt.sign(
-        {
-          userId: result.id,
-        },
-        ENV.REFRESH_TOKEN_SECRET,
-        { expiresIn: '30d' },
-      )
+          {
+            userId: result.id,
+          },
+          ENV.REFRESH_TOKEN_SECRET,
+          { expiresIn: '30d' },
+        )
       : undefined;
 
     const token = jwt.sign(
@@ -141,15 +153,17 @@ const loginUser = async (
 const verifyEmail = async (token: string) => {
   try {
     const decoded = jwt.verify(token, ENV.JWT_SECRET) as { userId: number };
-    const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+    });
     if (!user) {
       throw new AuthenticationError('Invalid token');
     }
 
     if (user.email_verified) {
       return {
-        message: 'Email already verified'
-      }
+        message: 'Email already verified',
+      };
     }
 
     await prisma.user.update({
@@ -161,14 +175,13 @@ const verifyEmail = async (token: string) => {
     });
 
     return {
-      message: 'Email verified successfully'
-    }
-
+      message: 'Email verified successfully',
+    };
   } catch (error) {
     logger.error('Error verify email', error);
     throw error;
   }
-}
+};
 
 const resendEmail = async (email: string) => {
   try {
@@ -179,11 +192,13 @@ const resendEmail = async (email: string) => {
 
     if (user.email_verified) {
       return {
-        message: 'Email already verified'
-      }
+        message: 'Email already verified',
+      };
     }
 
-    const verificationToken = jwt.sign({ userId: user.id }, ENV.JWT_SECRET, { expiresIn: '24hr' })
+    const verificationToken = jwt.sign({ userId: user.id }, ENV.JWT_SECRET, {
+      expiresIn: '24hr',
+    });
 
     const verifcationURL = `${ENV.FRONTEND_URL}/auth/verify-email/${verificationToken}`;
 
@@ -192,22 +207,27 @@ const resendEmail = async (email: string) => {
       name: `${user.firstName} ${user.lastName}`,
       email: email,
       verificationLink: verifcationURL,
-      currentYear: new Date().getFullYear()
-    }
+      currentYear: new Date().getFullYear(),
+    };
 
     // send verification email here
-    await sendEmail('email_verification_template_v1', 'email_verification', [email], 'Sentria - Email Verification', data);
+    await sendEmail(
+      'email_verification_template_v1',
+      'email_verification',
+      [email],
+      'Sentria - Email Verification',
+      data,
+    );
     return {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
       username: user.username,
     };
-
   } catch (error) {
     logger.error('Error resend email', error);
     throw error;
   }
-}
+};
 
 export { registerUser, loginUser, auth, verifyEmail, resendEmail };
