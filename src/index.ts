@@ -11,50 +11,83 @@ import jsonResponse from './middlewares/json-response';
 import networkLog from './middlewares/network-log';
 import gateway from './routes/gateway';
 import { NotFoundError } from './utils/errors';
+import { closeMongoDBConnection, connectToMongoDB } from './libs/mongo';
+import prisma from './libs/prisma';
 
-const app = express();
+async function startServer() {
+  try {
 
-app.use(
-  cors({
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    origin: ENV.CORS_ORIGIN,
-    preflightContinue: true,
-  }),
-);
+    // connect to mongodb
+    if (ENV.MONGO_URI) {
+      await connectToMongoDB();
+    } else {
+      logger.error('MONGO_URI is not defined');
+      throw new Error('MONGO_URI is not defined');
+    }
 
-app.use(helmet());
-app.use(compression());
-app.use(json());
-app.use(helmet());
-app.use(urlencoded({ extended: true }));
-app.use(cookieParser());
-app.use(jsonResponse);
-app.use(networkLog);
+    const app = express();
 
-app.get('/', (_req, res) => {
-  return res.json({ message: 'Hello from Sentria!' });
-});
+    app.use(
+      cors({
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        origin: ENV.CORS_ORIGIN,
+        preflightContinue: true,
+      }),
+    );
 
-app.use(gateway);
+    app.use(helmet());
+    app.use(compression());
+    app.use(json());
+    app.use(urlencoded({ extended: true }));
+    app.use(cookieParser());
+    app.use(jsonResponse);
+    app.use(networkLog);
 
-app.use((_req, _res, next) => {
-  return next(new NotFoundError('Endpoint Not Found.'));
-});
+    app.get('/', (_req, res) => {
+      return res.json({ message: 'Hello from Sentria!' });
+    });
 
-app.use(errorHandler);
+    app.use(gateway);
 
-app.listen(ENV.PORT, () => {
-  logger.verbose(
-    `ENV is pointing to ${
-      ENV.NODE_ENV !== 'production'
-        ? JSON.stringify(ENV, undefined, 2)
-        : ENV.NODE_ENV
-    }`,
-  );
-  expressListRoutes(gateway, { logger: false }).forEach((route) => {
-    logger.verbose(`${route.method} ${route.path.replaceAll('\\', '/')}`);
-  });
+    app.use((_req, _res, next) => {
+      return next(new NotFoundError('Endpoint Not Found.'));
+    });
 
-  logger.info(`Application is running on Port :${ENV.PORT}`);
-});
+    app.use(errorHandler);
+
+    const server = app.listen(ENV.PORT, () => {
+      logger.verbose(
+        `ENV is pointing to ${ENV.NODE_ENV !== 'production'
+          ? JSON.stringify(ENV, undefined, 2)
+          : ENV.NODE_ENV
+        }`,
+      );
+      expressListRoutes(gateway, { logger: false }).forEach((route) => {
+        logger.verbose(`${route.method} ${route.path.replaceAll('\\', '/')}`);
+      });
+
+      logger.info(`Application is running on Port :${ENV.PORT}`);
+    });
+
+    // Graceful shutdown
+    const signals = ['SIGINT', 'SIGTERM', 'SIGQUIT'];
+    signals.forEach((signal) => {
+      process.on(signal, async () => {
+        logger.info(`Received ${signal}, shutting down gracefully...`);
+        server.close(async () => {
+          logger.info('HTTP server closed.');
+          await closeMongoDBConnection(); // Close MongoDB connection
+          await prisma.$disconnect(); // If you also want to explicitly disconnect Prisma
+          process.exit(0);
+        });
+      });
+    });
+
+  } catch (error) {
+    logger.error('Error starting server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
