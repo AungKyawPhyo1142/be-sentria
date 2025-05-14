@@ -1,0 +1,160 @@
+<html lang='en'>
+
+  <head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f7f7f7;
+        color: #495057; /* Slightly softer text color */
+        line-height: 1.6;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 620px; /* Slightly wider for a more open feel */
+        margin: 40px auto; /* More top/bottom margin */
+        background-color: #ffffff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05); /* Softer shadow */
+        border: 1px solid #e0e0e0;
+      }
+
+      .header {
+        text-align: center;
+        padding-bottom: 30px;
+      }
+
+      .header img {
+        max-width: 160px;
+        height: auto;
+        margin-bottom: 25px;
+      }
+
+      .header h1 {
+        margin: 10px 0 0;
+        font-size: 28px; /* Slightly larger for emphasis */
+        color: #2c3e50;
+        font-weight: 500; /* Slightly lighter font weight */
+      }
+
+      .content {
+        padding: 25px 0;
+        text-align: center;
+        font-size: 17px; /* Slightly larger for a warmer feel */
+        color: #555555;
+      }
+
+      .content p {
+        margin: 20px 0;
+      }
+
+      .button-container {
+        text-align: center;
+        margin: 35px 0;
+      }
+
+      .button {
+        display: inline-block;
+        padding: 15px 35px; /* Slightly more padding */
+        font-size: 18px;
+        color: #ffffff;
+        background-color: #28a745; /* A hopeful green color */
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: background-color 0.2s ease-in-out;
+      }
+
+      .button:hover {
+        background-color: #1e7e34; /* Darker shade on hover */
+      }
+
+      .footer {
+        text-align: center;
+        font-size: 13px;
+        color: #777777;
+        margin-top: 35px;
+        padding-top: 20px;
+        border-top: 1px solid #e8e8e8;
+      }
+
+      .footer p {
+        margin: 8px 0;
+      }
+
+      .accent-color {
+        color: #007bff; /* A touch of blue for trust and stability */
+        font-weight: bold;
+      }
+    </style>
+  </head>
+
+  <body
+    style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 1rem; padding: 0; background-color: #f7f7f7; color: #495057; line-height: 1.6;"
+  >
+    <div
+      class='container'
+      style='width: 100%; max-width: 620px; margin: 40px auto; background-color: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05); border: 1px solid #e0e0e0;'
+    >
+      <div class='header' style='text-align: center; padding-bottom: 30px;'>
+        <img
+          src='cid:logo'
+          alt='Sentria Logo'
+          style='max-width: 160px; height: auto; margin-bottom: 25px;'
+        />
+        <h1
+          style='margin: 10px 0 0; font-size: 28px; color: #2c3e50; font-weight: 500;'
+        >Welcome to Sentria!</h1>
+      </div>
+      <div
+        class='content'
+        style='padding: 25px 0; text-align: center; font-size: 17px; color: #555555;'
+      >
+        <p style='margin: 20px 0;'>We're so glad you've joined our community, a
+          place where we come together to share vital information and support
+          each other during challenging times.</p>
+        <p style='margin: 20px 0;'>Your voice matters. By verifying your email,
+          you'll be able to connect with others, share updates, and contribute
+          to a network built on
+          <span
+            class='accent-color'
+            style='color: #007bff; font-weight: bold;'
+          >hope</span>
+          and resilience.</p>
+        <p style='margin: 20px 0;'>Please click the button below to activate
+          your account and become a part of Sentria.</p>
+        <div
+          class='button-container'
+          style='text-align: center; margin: 35px 0;'
+        >
+          <a
+            href='{{verificationLink}}'
+            class='button'
+            style='display: inline-block; padding: 15px 35px; font-size: 18px; color: #ffffff; background-color: #28a745; text-decoration: none; border-radius: 8px; font-weight: 600; transition: background-color 0.2s ease-in-out;'
+            onmouseover="this.style.backgroundColor='#1e7e34'"
+            onmouseout="this.style.backgroundColor='#28a745'"
+          >Verify My Email & Join Sentria</a>
+        </div>
+        <p style='margin: 20px 0; font-size: 14px; color: #777777;'>If you
+          didn't sign up for Sentria, please disregard this email. No further
+          action is needed.</p>
+      </div>
+      <div
+        class='footer'
+        style='text-align: center; font-size: 13px; color: #777777; margin-top: 35px; padding-top: 20px; border-top: 1px solid #e8e8e8;'
+      >
+        <p style='margin: 8px 0;'>&copy;
+          {{currentYear}}
+          Sentria. Together, we are stronger.</p>
+        <p style='margin: 8px 0;'>For support or inquiries, please visit our
+          help center.</p>
+      </div>
+    </div>
+  </body>
+
+</html>

@@ -6,6 +6,9 @@ export const ENV = {
   NODE_ENV: (process.env.NODE_ENV || 'dev') as 'local' | 'dev' | 'production',
   PORT: process.env.PORT || 3000,
   REFRESH_TOKEN_SECRET: process.env.RERESH_TOKEN_SECRET || 'sentria',
+  RESET_PASSWORD_SENDER_EMAIL:
+    process.env.RESET_PASSWORD_SENDER_EMAIL || 'sentria.platform@gmail.com',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'localhost:8080',
 };
 
 if (ENV.NODE_ENV === 'local' && !process.env.CORS_ORIGIN) {
