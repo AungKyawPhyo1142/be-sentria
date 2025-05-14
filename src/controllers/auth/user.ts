@@ -9,6 +9,9 @@ const registerUserSchema = object({
   firstName: string(),
   lastName: string(),
   password: string().min(8),
+  username: string(),
+  birthday: string(),
+  country: string(),
 });
 
 const loginSchema = object({
@@ -16,6 +19,10 @@ const loginSchema = object({
   password: string().min(8),
   rememberMe: boolean().default(true),
 });
+
+const resendEmailSchema = object({
+  email: string().email(),
+})
 
 const auth = (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -32,7 +39,7 @@ const registerUser = async (
   next: NextFunction,
 ) => {
   try {
-    const { email, firstName, lastName, password } = registerUserSchema.parse(
+    const { email, firstName, lastName, password, username, country, birthday } = registerUserSchema.parse(
       req.body,
     );
 
@@ -40,7 +47,10 @@ const registerUser = async (
       email,
       firstName,
       lastName,
+      username,
+      birthday,
       password,
+      country,
     );
     return res.status(201).json(response);
   } catch (error) {
@@ -84,4 +94,24 @@ const loginUser = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-export { registerUser, loginUser, auth };
+const verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { token } = req.params;
+    await userService.verifyEmail(token);
+    return res.status(200).json({ message: 'Email verified' });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const resendEmail = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email } = resendEmailSchema.parse(req.body);
+    await userService.resendEmail(email);
+    return res.status(200).json({ message: 'Email sent' });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export { registerUser, loginUser, auth, verifyEmail, resendEmail };
