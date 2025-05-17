@@ -1,5 +1,4 @@
-
-import { DatabaseError } from "./utils/errors";
+import { DatabaseError } from './utils/errors';
 
 export const ENV = {
   APP: process.env.APP || 'be-sentria',

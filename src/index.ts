@@ -5,18 +5,17 @@ import express, { json, urlencoded } from 'express';
 import expressListRoutes from 'express-list-routes';
 import helmet from 'helmet';
 import { ENV } from './env';
+import { closeMongoDBConnection, connectToMongoDB } from './libs/mongo';
+import prisma from './libs/prisma';
 import logger from './logger';
 import errorHandler from './middlewares/error-handler';
 import jsonResponse from './middlewares/json-response';
 import networkLog from './middlewares/network-log';
 import gateway from './routes/gateway';
 import { NotFoundError } from './utils/errors';
-import { closeMongoDBConnection, connectToMongoDB } from './libs/mongo';
-import prisma from './libs/prisma';
 
 async function startServer() {
   try {
-
     // connect to mongodb
     if (ENV.MONGO_URI) {
       await connectToMongoDB();
@@ -58,9 +57,10 @@ async function startServer() {
 
     const server = app.listen(ENV.PORT, () => {
       logger.verbose(
-        `ENV is pointing to ${ENV.NODE_ENV !== 'production'
-          ? JSON.stringify(ENV, undefined, 2)
-          : ENV.NODE_ENV
+        `ENV is pointing to ${
+          ENV.NODE_ENV !== 'production'
+            ? JSON.stringify(ENV, undefined, 2)
+            : ENV.NODE_ENV
         }`,
       );
       expressListRoutes(gateway, { logger: false }).forEach((route) => {
@@ -83,7 +83,6 @@ async function startServer() {
         });
       });
     });
-
   } catch (error) {
     logger.error('Error starting server:', error);
     process.exit(1);
