@@ -18,6 +18,18 @@ type UserDetails = {
   deleted_at: Date | null;
 };
 
+type UserUpdateData = Partial<{
+  firstName: string;
+  lastName: string;
+  profile_image: string | null;
+  email: string;
+  email_verified: boolean;
+  password: string;
+  verified_profile: boolean;
+  birthday: Date | null;
+  country: string;
+}>;
+
 const details = async (userId: number) => {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   
@@ -45,4 +57,29 @@ const details = async (userId: number) => {
   return userInfo;
 };
 
-export { details };
+const update = async ( 
+  id : number, 
+  updateData: UserUpdateData
+  ) => {
+    const user = await prisma.user.findUnique({ where: { id: id } });
+
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    const filteredData = Object.fromEntries(
+      Object.entries(updateData).filter(([_, value]) => value !== undefined)
+    );
+  
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: {
+        ...filteredData,
+        updated_at: new Date(),
+      },
+    });
+  
+    return updatedUser;
+}
+
+export { details, update };
