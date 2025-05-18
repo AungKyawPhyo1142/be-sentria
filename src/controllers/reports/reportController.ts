@@ -1,8 +1,10 @@
 import logger from '@/logger';
 import * as disasterReportService from '@/services/disasterReports/disasterReports';
+import { ValidatedDisasterPayload } from '@/types/disasterReports';
 import {
   AuthenticationError,
   BadRequestError,
+  NotFoundError,
   ValidationError,
 } from '@/utils/errors';
 import { ReportType } from '@prisma/client';
@@ -93,7 +95,7 @@ export async function CreateReport(
         const disasterParams = (validatedRequestBody as any)
           .parameters as z.infer<typeof DisasterIncidentParametersSchema>;
 
-        const servicePayload: disasterReportService.ValidatedDisasterPayload = {
+        const servicePayload: ValidatedDisasterPayload = {
           title: disasterParams.title,
           description: disasterParams.description,
           incidentType: disasterParams.incidentType,
@@ -116,7 +118,9 @@ export async function CreateReport(
           },
           media: disasterParams.media || [],
         };
-        logger.info(`Creating disaster report: ${JSON.stringify(servicePayload)}`);
+        logger.info(
+          `Creating disaster report: ${JSON.stringify(servicePayload)}`,
+        );
         result = await disasterReportService.createDisasterReport(
           servicePayload,
           name,
@@ -134,5 +138,33 @@ export async function CreateReport(
     }
     logger.error(`Error creating report: ${error}`);
     return next(error);
+  }
+}
+
+// we will only return disaster report for now, later we may add other types if needed
+export async function getDisasterReportById(req: Request, res: Response, next: NextFunction) {
+  try {
+
+    // const user = req.user
+    const { reportId } = req.params
+
+    if (!reportId) {
+      return next(new BadRequestError('Report ID is required'))
+    }
+
+    const fullDisasterReportData = await disasterReportService.getFullDisasterReportById(reportId)
+
+    if (fullDisasterReportData.reportType !== ReportType.DISASTER_INCIDENT && !fullDisasterReportData.details) {
+      logger.warn(`Controller: Disaster report ${reportId} details not found in MongoDB, PG metadata found`)
+      return next(new NotFoundError(`Desaster report ${reportId} not found`))
+    }
+
+    return res.status(200).json({
+      report: fullDisasterReportData
+    })
+
+  } catch (error) {
+    logger.error(`Error getting disaster report by id: ${error}`)
+    return next(error)
   }
 }

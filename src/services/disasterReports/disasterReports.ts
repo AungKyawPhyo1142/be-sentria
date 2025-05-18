@@ -1,29 +1,10 @@
 import { getMongoDB } from '@/libs/mongo';
 import prisma from '@/libs/prisma';
 import logger from '@/logger';
-import { AppError, InternalServerError } from '@/utils/errors';
+import { DisasterIncidentDocument, ValidatedDisasterPayload } from '@/types/disasterReports';
+import { AppError, InternalServerError, NotFoundError } from '@/utils/errors';
 import { ReportStatus, ReportType, User } from '@prisma/client';
-import { Collection } from 'mongodb';
-
-export interface ValidatedDisasterPayload {
-  title: string;
-  description: string;
-  incidentType: 'EARTHQUAKE' | 'FLOOD' | 'FIRE' | 'STORM' | 'OTHER';
-  severity: 'UNKNOWN' | 'MINOR' | 'MODERATE' | 'SEVERE';
-  incidentTimestamp: Date;
-  location: {
-    type: 'Point';
-    coordinates: [number, number];
-  };
-  address?: {
-    street?: string;
-    district?: string;
-    city?: string;
-    country?: string;
-    fullAddress?: string;
-  };
-  media: Array<{ type: 'IMAGE' | 'VIDEO'; url: string; caption?: string }>;
-}
+import { Collection, ObjectId, WithId } from 'mongodb';
 
 // mongo db collection name
 const DISASTER_COLLECTION_NAME = 'disasters_incidents';
@@ -156,4 +137,71 @@ export async function createDisasterReport(
     if (error instanceof AppError) throw error;
     throw new InternalServerError('Error creating disaster report');
   }
+}
+
+export async function getDisasterReportDetailsByMongoId(
+  mongoDocId: string
+): Promise<WithId<DisasterIncidentDocument> | null> {
+  try {
+    const objectId = new ObjectId(mongoDocId)
+    const db = await getMongoDB();
+    const disasterCollection: Collection<DisasterIncidentDocument> = db.collection(DISASTER_COLLECTION_NAME);
+    const document = await disasterCollection.findOne({ _id: objectId })
+    return document
+  } catch (error) {
+    logger.error(`Error getting disaster report by id ${mongoDocId}`)
+    throw new InternalServerError('Error getting disaster report by id')
+  }
+}
+
+// to orchestrate getting full report from postgres
+export async function getFullDisasterReportById(reportId: string) {
+  logger.info(`Getting full disaster report for ${reportId}`)
+
+  const reportMetadata = await prisma.report.findUnique({
+    where: { id: reportId },
+    include: {
+      generatedBy: { // include the user who generated the report
+        select: {
+          id: true,
+          username: true,
+          firstName: true,
+          lastName: true,
+          profile_image: true,
+        }
+
+      }
+    }
+  })
+
+  if (!reportMetadata) {
+    throw new NotFoundError(`Report ${reportId} not found`)
+  }
+
+  if (reportMetadata.reportType !== ReportType.DISASTER_INCIDENT) {
+    logger.warn(`Report ${reportId} is not a disaster report, but type is ${reportMetadata.reportType}`)
+    throw new NotFoundError(`Report ${reportId} not found`)
+  }
+
+  let disasterDetails: WithId<DisasterIncidentDocument> | null = null
+  if (reportMetadata.externalStorageId) {
+    disasterDetails = await getDisasterReportDetailsByMongoId(reportMetadata.externalStorageId)
+    if (!disasterDetails) {
+      logger.error(`Data inconsistency: report ${reportId} has externalStorageId ${reportMetadata.externalStorageId} but no data in mongoDB`)
+      throw new InternalServerError(`Data inconsistency: report ${reportId} has externalStorageId ${reportMetadata.externalStorageId} but no data in mongoDB`)
+    }
+  }
+  else if (reportMetadata.reportType === ReportType.DISASTER_INCIDENT) {
+    logger.error(`Report ${reportId} has no externalStorageId but type is ${reportMetadata.reportType}`)
+    throw new InternalServerError(`Report ${reportId} has no externalStorageId but type is ${reportMetadata.reportType}`)
+  }
+
+  // TODO: fetch current user's vote on this report
+  // TODO: fetch comments for this report
+
+  return {
+    ...reportMetadata,
+    details: disasterDetails
+  }
+
 }
