@@ -18,7 +18,6 @@ export default [
           varsIgnorePattern: '^_',
         },
       ],
-      'sort-keys': ['error', 'asc', { caseSensitive: false, natural: true }],
       'sort-vars': ['error', { ignoreCase: true }],
     },
   },
