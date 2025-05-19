@@ -7,12 +7,13 @@ import helmet from 'helmet';
 import { ENV } from './env';
 import { closeMongoDBConnection, connectToMongoDB } from './libs/mongo';
 import prisma from './libs/prisma';
+import { closeRabbitMQConnection, initRabbitMQConnection } from './libs/rabbitmqClient';
 import logger from './logger';
 import errorHandler from './middlewares/error-handler';
 import jsonResponse from './middlewares/json-response';
 import networkLog from './middlewares/network-log';
 import gateway from './routes/gateway';
-import { NotFoundError } from './utils/errors';
+import { InternalServerError, NotFoundError } from './utils/errors';
 
 async function startServer() {
   try {
@@ -22,6 +23,17 @@ async function startServer() {
     } else {
       logger.error('MONGO_URI is not defined');
       throw new Error('MONGO_URI is not defined');
+    }
+
+    // connect to rabbitmq
+    if (ENV.RABBITMQ_URL) {
+      await initRabbitMQConnection().catch((initRabbitMQError) => {
+        logger.error('Failed to connect to RabbitMQ:', initRabbitMQError);
+        throw new InternalServerError('Failed to connect to RabbitMQ');
+      });
+    } else {
+      logger.error('RABBITMQ_URL is not defined');
+      throw new InternalServerError('RABBITMQ_URL is not defined');
     }
 
     const app = express();
@@ -78,6 +90,7 @@ async function startServer() {
         server.close(async () => {
           logger.info('HTTP server closed.');
           await closeMongoDBConnection(); // Close MongoDB connection
+          await closeRabbitMQConnection(); // Close RabbitMQ connection
           await prisma.$disconnect(); // If you also want to explicitly disconnect Prisma
           process.exit(0);
         });
