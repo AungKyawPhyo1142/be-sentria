@@ -1,10 +1,9 @@
 import * as userService from '@/services/user/user';
 import { ValidationError } from '@/utils/errors';
 import { NextFunction, Request, Response } from 'express';
-import { boolean, date, number, object, string, ZodError } from 'zod';
+import { boolean, date, object, string, ZodError } from 'zod';
 
 const userDetailSchema = object({
-  id: number(),
   firstName: string().optional(), 
   lastName: string().optional(),
   profile_image: string().nullable().optional(),
@@ -37,10 +36,10 @@ const details = async (req: Request, res: Response, next: NextFunction) => {
 
 const update = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const parsed = userDetailSchema.parse(req.body);
-      const { id, ...updateData } = parsed;  
-  
-      const response = await userService.update(id, updateData);
+      const userId = parseInt(req.params.id, 10);
+      const updateData = userDetailSchema.parse(req.body);
+
+      const response = await userService.update(userId, updateData);
   
       return res.status(200).json(response);
   
