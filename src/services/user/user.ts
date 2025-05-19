@@ -100,4 +100,22 @@ const softDelete = async (id: number) =>{
   return deletedUser;
 }
 
-export { details, update, softDelete };
+const recover = async (id:number) => {
+  const user = await prisma.user.findUnique({where: {id}});
+
+  if(!user || user.deleted_at === null){
+    throw new NotFoundError("User not found or already active");
+  }
+
+  const recoverUser = await prisma.user.update({
+    where: {id},
+    data:{
+      deleted_at: null,
+      updated_at: new Date(),
+    }
+  })
+
+  return recoverUser;
+}
+
+export { details, update, softDelete, recover };

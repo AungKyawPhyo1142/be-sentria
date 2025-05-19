@@ -7,5 +7,6 @@ const router = Router();
 router.get('/:id', secureRoute() , userController.details);
 router.patch('/:id',secureRoute(), userController.update)
 router.delete('/:id',secureRoute(), userController.softDelete)
+router.patch('/:id/recover',secureRoute(), userController.recover)
 
 export default router;

@@ -70,5 +70,24 @@ const softDelete = async (req: Request, res:Response,next: NextFunction) => {
     return next(error);
   }
 }
+
+const recover = async(req: Request, res: Response, next: NextFunction) => {
+  try{
+    const userId = parseInt(req.params.id, 10);
+
+    if(isNaN(userId)){
+      return res.status(400).json({
+        code: 'INVALID_USER_ID',
+        message: 'User ID must be a valid number',
+        status: 'ERROR',
+      });
+    }
+
+    const response = await userService.recover(userId);
+    return res.status(200).json(response);
+  }catch(error){
+    return next(error)
+  }
+}
  
-export { details, update, softDelete };
+export { details, update, softDelete, recover};
