@@ -1,10 +1,11 @@
 {
 	"info": {
-		"_postman_id": "0bf62de2-4c10-4320-951d-b6148c056048",
+		"_postman_id": "09bd5c18-f7c0-496b-84ad-62ab7b57a514",
 		"name": "Sentria",
 		"description": "- inside variables, make sure HOST is pointing to the port number your backend is running",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "28564017"
+		"_exporter_id": "35166542",
+		"_collection_link": "https://sentria.postman.co/workspace/sentria-db~003d23dd-cccc-45fd-ae9e-79064ffc9c56/collection/35166542-09bd5c18-f7c0-496b-84ad-62ab7b57a514?action=share&source=collection_link&creator=35166542"
 	},
 	"item": [
 		{
@@ -61,7 +62,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"aung@mail.com\",\n    \"password\": \"Aung@Dev001\"\n\n}",
+							"raw": "{\n    \"email\": \"kyi+8@gmail.com\",\n    \"password\": \"Password@123\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -131,23 +132,100 @@
 			"description": "This folder is for authorization related endpoints"
 		},
 		{
-			"name": "Example (Get Random Number)",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:3000/example",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "3000",
-					"path": [
-						"example"
-					]
+			"name": "User",
+			"item": [
+				{
+					"name": "User Details By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{HOST}}/users/1",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"users",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\" : 1,\n    \"country\": \"Bangkok\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{HOST}}/users/1",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"users",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Soft Delete",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{HOST}}/users/1",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"users",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Recover",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{HOST}}/users/1/recover",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"users",
+								"1",
+								"recover"
+							]
+						}
+					},
+					"response": []
 				}
-			},
-			"response": []
+			]
 		}
 	],
 	"event": [
