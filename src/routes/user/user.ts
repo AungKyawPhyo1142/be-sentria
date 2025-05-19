@@ -5,6 +5,7 @@ import { Router } from 'express';
 const router = Router();
 
 router.get('/:id', secureRoute() , userController.details);
-router.patch('/:id', userController.update)
+router.patch('/:id',secureRoute(), userController.update)
+router.delete('/:id',secureRoute(), userController.softDelete)
 
 export default router;

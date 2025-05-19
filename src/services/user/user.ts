@@ -31,7 +31,7 @@ type UserUpdateData = Partial<{
 }>;
 
 const details = async (userId: number) => {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+  const user = await prisma.user.findFirst({ where: { id: userId, deleted_at: null } });
   
   if (!user) {
     throw new NotFoundError('User not found');
@@ -82,4 +82,22 @@ const update = async (
     return updatedUser;
 }
 
-export { details, update };
+const softDelete = async (id: number) =>{
+  const user = await prisma.user.findUnique({where: {id}});
+
+  if(!user){
+    throw new NotFoundError('User not Found');
+  }
+
+  const deletedUser = await prisma.user.update({
+    where:{id},
+    data:{
+      deleted_at: new Date(),
+      updated_at: new Date()
+    }
+  })
+
+  return deletedUser;
+}
+
+export { details, update, softDelete };

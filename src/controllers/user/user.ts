@@ -42,7 +42,7 @@ const update = async (req: Request, res: Response, next: NextFunction) => {
   
       const response = await userService.update(id, updateData);
   
-      return res.status(201).json(response);
+      return res.status(200).json(response);
   
     } catch (error) {
       if (error instanceof ZodError) {
@@ -53,4 +53,22 @@ const update = async (req: Request, res: Response, next: NextFunction) => {
     }
 };  
 
-export { details, update };
+const softDelete = async (req: Request, res:Response,next: NextFunction) => {
+  try{
+    const userId = parseInt(req.params.id, 10);
+
+    if (isNaN(userId)) {
+      return res.status(400).json({
+        code: 'INVALID_USER_ID',
+        message: 'User ID must be a valid number',
+        status: 'ERROR',
+      });
+    }
+    const response = await userService.softDelete(userId);
+    return res.status(200).json(response)
+  }catch(error){
+    return next(error);
+  }
+}
+ 
+export { details, update, softDelete };
