@@ -1,5 +1,7 @@
+import { ENV } from '@/env';
 import { getMongoDB } from '@/libs/mongo';
 import prisma from '@/libs/prisma';
+import { publishToQueue } from '@/libs/rabbitmqClient';
 import logger from '@/logger';
 import { AppError, InternalServerError } from '@/utils/errors';
 import { ReportStatus, ReportType, User } from '@prisma/client';
@@ -23,6 +25,24 @@ export interface ValidatedDisasterPayload {
     fullAddress?: string;
   };
   media: Array<{ type: 'IMAGE' | 'VIDEO'; url: string; caption?: string }>;
+}
+
+// this is for the job to be dispatched to GO service
+interface DisasterReportJobPayload {
+  postgresReportId: string;
+  mongoDbDocId: string;
+  title: string;
+  incidentType: string;
+  description: string;
+  severity: string;
+  incidentTimestamp: string;
+  latitude: number;
+  longitude: number;
+  city: string;
+  country: string;
+  address?: string; // combined address
+  media: Array<{ type: 'IMAGE' | 'VIDEO'; url: string; caption?: string }>;
+  reporterUserId: number;
 }
 
 // mongo db collection name
@@ -122,21 +142,59 @@ export async function createDisasterReport(
       `PG Report ${pgReportId} for "${pgReportName}" updated to COMPLETED with MongoDB ref ${mongoDocIDAsString}.`,
     );
 
-    // TODO: dispatch job to GO fact check service
-    logger.info(
-      `Placeholder: Job for fact-checking ${pgReportName} dispatched to GO service.`,
-    );
+    const disasterReportJobPayload: DisasterReportJobPayload = {
+      postgresReportId: pgReportId,
+      mongoDbDocId: mongoDocIDAsString,
+      title: payload.title,
+      incidentType: payload.incidentType,
+      description: payload.description,
+      severity: payload.severity,
+      incidentTimestamp: payload.incidentTimestamp.toISOString(),
+      latitude: payload.location.coordinates[1],
+      longitude: payload.location.coordinates[0],
+      city: payload.address?.city || '',
+      country: payload.address?.country || '',
+      address: payload.address?.fullAddress || `${payload.address?.street ? payload.address.street + ', ' : ''}${payload.address?.district ? payload.address.district + ', ' : ''}${payload.address?.city ? payload.address.city + ', ' : ''}${payload.address?.country || ''}`,
+      media: payload.media?.map((media) => ({ type: media.type, url: media.url, caption: media.caption })),
+      reporterUserId: requestingUserId,
+    }
+
+    // set the queue name from env, and publish the job to RabbitMQ
+    const queueName = ENV.RABBITMQ_FACTCHECK_QUEUE_NAME;
+    const published = await publishToQueue(queueName, disasterReportJobPayload)
+    let finalReportStatus: ReportStatus
+    let statusUpdateMessage: string
+
+    if (published) {
+      finalReportStatus = ReportStatus.FACTCHECK_PENDING
+      statusUpdateMessage = `[NodeService] Disaster report job published to ${queueName} queue. Report ID: ${pgReportId}`
+      logger.info(statusUpdateMessage);
+    } else {
+      finalReportStatus = ReportStatus.PUBLISHED_FAILED
+      statusUpdateMessage = `[NodeService] Failed to publish disaster report job to ${queueName} queue. Report ID: ${pgReportId}`
+      logger.error(statusUpdateMessage);
+    }
+
+    // update the PG report status based on the publish result
+    await prisma.report.update({
+      where: { id: pgReportId },
+      data: {
+        status: finalReportStatus,
+        errorMessage: published ? null : 'Failed to publish to RabbitMQ',
+      }
+    })
 
     return {
       postgresReportId: pgReportId,
       mongoDbReportId: mongoDocIDAsString,
-      message: `Disaster report "${pgReportName}" (details: "${payload.title}") created successfully and submitted for fact-checking.`,
+      message: `Disaster report "${pgReportName}" (details: "${payload.title}") created successfully and submitted for fact-checking. Job Dispatch Status: ${finalReportStatus}`,
+      currentStatus: finalReportStatus,
       // return other info if Frontend needs it
     };
   } catch (error: any) {
     logger.error(`Error creating disaster report for ${pgReportId}`);
     if (pgReportId && !mongoDocIDAsString) {
-      // pg is created but mongo is not
+      // pg is created but mongo or subsequent is failed
       try {
         await prisma.report.update({
           where: {
@@ -144,7 +202,7 @@ export async function createDisasterReport(
           },
           data: {
             status: ReportStatus.FAILED,
-            errorMessage: `MongoDB creation failed: ${error.message}`,
+            errorMessage: `Report creation failed before dispatch: ${error.message.substring(0, 250)}`,
           },
         });
       } catch (rollBackError: any) {
