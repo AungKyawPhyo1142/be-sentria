@@ -23,6 +23,12 @@ export const ErrorCodes = {
     statusCode: 500,
     userMessage: 'A database error occurred. Please try again later.',
   },
+  EMAIL_VERIFICATION_ERROR: {
+    code: 'SENTRIA-50003',
+    message: 'Email verification error.',
+    statusCode: 500,
+    userMessage: 'There was an error with email verification. Please try again later.',
+  },
   FORBIDDEN: {
     code: 'SENTRIA-40301',
     message: 'Forbidden resource.',
