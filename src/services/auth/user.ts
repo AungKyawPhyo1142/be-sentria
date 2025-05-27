@@ -2,11 +2,10 @@ import { ENV } from '@/env';
 import { sendEmail } from '@/helpers/sendEmail';
 import prisma from '@/libs/prisma';
 import logger from '@/logger';
-import { ErrorCodes } from '@/constants/error-codes';
 import {
-  AppError,
   AuthenticationError,
   ConflictError,
+  EmailValidationError,
   NotFoundError,
 } from '@/utils/errors';
 import bcrypt from 'bcryptjs';
@@ -181,12 +180,7 @@ const verifyEmail = async (token: string) => {
     };
   } catch (error) {
     logger.error('Error verify email', error);
-    throw new AppError(
-      ErrorCodes.EMAIL_VERIFICATION_ERROR.message,
-      ErrorCodes.EMAIL_VERIFICATION_ERROR.statusCode,
-      ErrorCodes.EMAIL_VERIFICATION_ERROR.code,
-      ErrorCodes.EMAIL_VERIFICATION_ERROR.userMessage
-    );
+    throw new EmailValidationError('There was an error with email verification');
   }
 };
 
@@ -233,12 +227,7 @@ const resendEmail = async (email: string) => {
     };
   } catch (error) {
     logger.error('Error resend email', error);
-    throw new AppError(
-      ErrorCodes.EMAIL_VERIFICATION_ERROR.message,
-      ErrorCodes.EMAIL_VERIFICATION_ERROR.statusCode,
-      ErrorCodes.EMAIL_VERIFICATION_ERROR.code,
-      ErrorCodes.EMAIL_VERIFICATION_ERROR.userMessage
-    );
+    throw new EmailValidationError('There was an error with email verification');
   }
 };
 
