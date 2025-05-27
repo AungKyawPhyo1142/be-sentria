@@ -40,6 +40,7 @@ enum ReportStatus {
     FAILED
     PUBLISHED_FAILED
     FACTCHECK_PENDING
+    FACTCHECK_COMPLETE
     // FACTCHECK_VERIFIED
     // FACTCHECK_UNVERIFIED
 }
@@ -67,9 +68,12 @@ model Report {
     completed_at DateTime?
 
     // denormalized counts for quick access, updated by application logic
-    upvoteCount   Int @default(0)
-    downvoteCount Int @default(0)
-    commentCount  Int @default(0)
+    factCheckStatus            String?   @default("")
+    factCheckOverallPercentage Float?      @default(0)
+    factCheckLastUpdatedAt     DateTime?
+    upvoteCount                Int       @default(0)
+    downvoteCount              Int       @default(0)
+    commentCount               Int       @default(0)
 
     // relations
     votes    ReportVote[]

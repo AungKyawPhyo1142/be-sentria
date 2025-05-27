@@ -46,7 +46,7 @@ interface DisasterReportJobPayload {
 }
 
 // mongo db collection name
-const DISASTER_COLLECTION_NAME = 'disasters_incidents';
+export const DISASTER_COLLECTION_NAME = 'disasters_incidents';
 
 export async function createDisasterReport(
   payload: ValidatedDisasterPayload,

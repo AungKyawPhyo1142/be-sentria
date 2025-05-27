@@ -13,7 +13,11 @@ export const ENV = {
   FRONTEND_URL: process.env.FRONTEND_URL || 'localhost:8080',
   MONGO_URI: process.env.MONGO_URI,
   RABBITMQ_URL: process.env.RABBITMQ_URL,
-  RABBITMQ_FACTCHECK_QUEUE_NAME: process.env.RABBITMQ_FACTCHECK_QUEUE_NAME || 'sentria_factcheck_jobs',
+  RABBITMQ_FACTCHECK_QUEUE_NAME:
+    process.env.RABBITMQ_FACTCHECK_QUEUE_NAME || 'sentria_factcheck_jobs',
+  RABBITMQ_FACTCHECK_RESULT_QUEUE_NAME:
+    process.env.RABBITMQ_FACTCHECK_RESULT_QUEUE_NAME ||
+    'sentria_factcheck_results',
 };
 
 if (ENV.NODE_ENV === 'local' && !process.env.CORS_ORIGIN) {
@@ -28,6 +32,12 @@ if (!ENV.MONGO_URI) {
   throw new DatabaseError('MONGO_URI is not defined');
 }
 
-if (!ENV.RABBITMQ_URL) {
-  throw new InternalServerError('RABBITMQ_URL is not defined');
+if (
+  !ENV.RABBITMQ_URL ||
+  !ENV.RABBITMQ_FACTCHECK_QUEUE_NAME ||
+  !ENV.RABBITMQ_FACTCHECK_RESULT_QUEUE_NAME
+) {
+  throw new InternalServerError(
+    'RABBITMQ_URL | RABBITMQ_FACTCHECK_QUEUE | RABBITMQ_FACTCHECK_RESULT_QUEUE is not defined',
+  );
 }
