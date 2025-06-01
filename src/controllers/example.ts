@@ -1,6 +1,7 @@
 // Responsible for receiving & returning data to routes
 import { ENV } from '@/env';
 import { publishToQueue } from '@/libs/rabbitmqClient';
+import { emitFactCheckUpdateToRoom } from '@/libs/socketManager';
 import logger from '@/logger';
 import { InternalServerError, ValidationError } from '@/utils/errors';
 import * as exampleService from '@services/example';
@@ -20,6 +21,26 @@ const sumSchema = object({
 const updateSchema = object({
   number: number(),
 });
+
+// * Simple test for websocket
+const testWebSocketSchema = object({
+  reportId: string(),
+  factCheckOverallPercentage: number(),
+  status: string(),
+  narrative: string(),
+  lastCalculatedAt: string(),
+});
+const testWebSocketMessage = (req: Request, res: Response) => {
+  const { reportId, factCheckOverallPercentage, status, narrative, lastCalculatedAt } =
+    testWebSocketSchema.parse(req.body);
+  emitFactCheckUpdateToRoom(reportId, {
+    factCheckOverallPercentage,
+    status,
+    narrative,
+    lastCalculatedAt,
+  });
+  res.status(200).json({ message: 'Message sent to room' });
+};
 
 // * Simple test message payload for RabbitMQ
 const testRabbitMQMessageSchema = object({
@@ -140,4 +161,5 @@ export {
   updateNumber,
   patchNumber,
   sendTestRabbitMQMessage,
+  testWebSocketMessage,
 };

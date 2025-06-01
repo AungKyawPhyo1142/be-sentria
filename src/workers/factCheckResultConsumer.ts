@@ -211,7 +211,7 @@ import { getMongoDB } from '@/libs/mongo';
 // Or your actual path to get MongoDB instance
 import prisma from '@/libs/prisma';
 //
-import { emitFactCheckUpdateToRoom } from '@/libs/socketManager';
+import {  emitFactCheckUpdateToRoom } from '@/libs/socketManager';
 //
 import logger from '@/logger';
 import { DISASTER_COLLECTION_NAME } from '@/services/disasterReports/disasterReports';
@@ -462,6 +462,7 @@ async function connectAndConsumeResults(attempt = 1): Promise<void> {
               lastCalculatedAt: resultPayload.checkedAt,
               // You might want to send the whole resultPayload.factCheck or parts of it
             });
+
 
             resultsConsumerChannel?.ack(msg);
             logger.info(

@@ -18,4 +18,7 @@ router.post(
   exampleController.sendTestRabbitMQMessage,
 );
 
+// -- Websocket Test
+router.post('/test-websocket', exampleController.testWebSocketMessage);
+
 export default router;

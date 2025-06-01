@@ -215,3 +215,40 @@ export async function createDisasterReport(
     throw new InternalServerError('Error creating disaster report');
   }
 }
+
+export async function getAllDisasterReports(
+  cursor: string,
+  limit: string,
+) {
+  const take = parseInt(limit as string, 10) || 10;
+  try {
+    const reports = await prisma.report.findMany({
+      take: take + 1,
+      ...(cursor && {
+        skip: 1, // skip the cursor item
+        cursor: {
+          id: cursor,
+        }
+      }),
+      orderBy: {
+        created_at: 'desc',
+      },
+      where: {
+        reportType: ReportType.DISASTER_INCIDENT,
+      }
+    })
+
+    const hasNextPage = reports.length > take;
+    const paginatedReports = hasNextPage ? reports.slice(0, take) : reports;
+
+    return {
+      data: paginatedReports,
+      nextCursor: hasNextPage ? reports[take].id : null,
+      hasNextPage,
+    }
+
+  } catch (error) {
+    logger.error(`Error fetching disaster reports: ${error}`);
+    throw new InternalServerError('Error fetching disaster reports');
+  }
+}

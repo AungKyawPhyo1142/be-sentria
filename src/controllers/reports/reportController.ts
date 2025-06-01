@@ -136,3 +136,15 @@ export async function CreateReport(
     return next(error);
   }
 }
+
+export async function GetAllDiasterReports(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { cursor, limit } = req.query
+    const reports = await disasterReportService.getAllDisasterReports(cursor as string, limit as string);
+    return res.status(200).json({ reports });
+  } catch (error) {
+    logger.error(`Error fetching disaster reports: ${error}`);
+    return next(error);
+  }
+
+}
