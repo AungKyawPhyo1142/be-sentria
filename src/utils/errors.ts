@@ -115,7 +115,17 @@ export class NotFoundError extends AppError {
     );
   }
 }
-
+export class EmailValidationError extends AppError{
+  constructor(details?:string) {
+    const error = ErrorCodes.EMAIL_VERIFICATION_ERROR;
+    super(
+      details || error.message,
+      error.statusCode,
+      error.code,
+      error.userMessage
+    )
+  }
+}
 export class ServiceUnavailableError extends AppError {
   constructor(details?: string) {
     const error = ErrorCodes.SERVICE_UNAVAILABLE;
