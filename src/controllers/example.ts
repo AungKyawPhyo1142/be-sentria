@@ -31,8 +31,13 @@ const testWebSocketSchema = object({
   lastCalculatedAt: string(),
 });
 const testWebSocketMessage = (req: Request, res: Response) => {
-  const { reportId, factCheckOverallPercentage, status, narrative, lastCalculatedAt } =
-    testWebSocketSchema.parse(req.body);
+  const {
+    reportId,
+    factCheckOverallPercentage,
+    status,
+    narrative,
+    lastCalculatedAt,
+  } = testWebSocketSchema.parse(req.body);
   emitFactCheckUpdateToRoom(reportId, {
     factCheckOverallPercentage,
     status,

@@ -25,7 +25,6 @@ model User {
     deleted_at        DateTime?
 
     //Relations
-
     reports        Report[]        @relation("GeneratedByUser")
     reportVotes    ReportVote[]
     reportComments ReportComment[]
@@ -33,29 +32,32 @@ model User {
 }
 
 enum ReportStatus {
-    PENDING
-    PROCESSING
-    AWAITING_DETAILS
     COMPLETED
     FAILED
     PUBLISHED_FAILED
     FACTCHECK_PENDING
     FACTCHECK_COMPLETE
-    // FACTCHECK_VERIFIED
-    // FACTCHECK_UNVERIFIED
+}
+
+enum ReportDBStatus {
+    PENDING_FOR_MONGODB_CREATION
+    PUBLISHED_IN_MONGODB
+    FAILED_TO_PUBLISH_IN_MONGODB
 }
 
 enum ReportType {
-    USER_LIST
     DISASTER_INCIDENT
 }
 
 model Report {
-    id         String       @id @default(cuid())
+    id         String         @id @default(cuid())
     reportType ReportType
     name       String
     parameters Json?
-    status     ReportStatus @default(PENDING)
+    country    String?        @default("")
+    city       String?        @default("")
+    dbStatus   ReportDBStatus @default(PENDING_FOR_MONGODB_CREATION) // status in MongoDB, used to track if report is published or not
+    status     ReportStatus   @default(FACTCHECK_PENDING)
 
     externalStorageId String? @unique // mongoDB document id
     errorMessage      String?
@@ -69,7 +71,7 @@ model Report {
 
     // denormalized counts for quick access, updated by application logic
     factCheckStatus            String?   @default("")
-    factCheckOverallPercentage Float?      @default(0)
+    factCheckOverallPercentage Float?    @default(0)
     factCheckLastUpdatedAt     DateTime?
     upvoteCount                Int       @default(0)
     downvoteCount              Int       @default(0)

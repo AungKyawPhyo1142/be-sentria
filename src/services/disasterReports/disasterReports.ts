@@ -3,46 +3,29 @@ import { getMongoDB } from '@/libs/mongo';
 import prisma from '@/libs/prisma';
 import { publishToQueue } from '@/libs/rabbitmqClient';
 import logger from '@/logger';
+import {
+  DISASTER_INCIDENT_TYPE,
+  DISASTER_SEVERITY,
+  DisasterReportJobPayload,
+  MongoDBReportSchema,
+} from '@/types/reports';
 import { AppError, InternalServerError } from '@/utils/errors';
-import { ReportStatus, ReportType, User } from '@prisma/client';
+import { ReportDBStatus, ReportStatus, ReportType, User } from '@prisma/client';
 import { Collection } from 'mongodb';
 
 export interface ValidatedDisasterPayload {
-  title: string;
+  reportName: string;
   description: string;
-  incidentType: 'EARTHQUAKE' | 'FLOOD' | 'FIRE' | 'STORM' | 'OTHER';
-  severity: 'UNKNOWN' | 'MINOR' | 'MODERATE' | 'SEVERE';
+  incidentType: DISASTER_INCIDENT_TYPE;
+  severity: DISASTER_SEVERITY;
   incidentTimestamp: Date;
   location: {
     type: 'Point';
     coordinates: [number, number];
   };
-  address?: {
-    street?: string;
-    district?: string;
-    city?: string;
-    country?: string;
-    fullAddress?: string;
-  };
-  media: Array<{ type: 'IMAGE' | 'VIDEO'; url: string; caption?: string }>;
-}
-
-// this is for the job to be dispatched to GO service
-interface DisasterReportJobPayload {
-  postgresReportId: string;
-  mongoDbDocId: string;
-  title: string;
-  incidentType: string;
-  description: string;
-  severity: string;
-  incidentTimestamp: string;
-  latitude: number;
-  longitude: number;
-  city: string;
   country: string;
-  address?: string; // combined address
+  city: string;
   media: Array<{ type: 'IMAGE' | 'VIDEO'; url: string; caption?: string }>;
-  reporterUserId: number;
 }
 
 // mongo db collection name
@@ -66,10 +49,11 @@ export async function createDisasterReport(
         parameters: {
           incidentType: payload.incidentType,
           severity: payload.severity,
-          locationSummary: `${payload.address?.city}, ${payload.address?.country}`,
-          titleSummary: payload.title,
         },
-        status: ReportStatus.AWAITING_DETAILS,
+        country: payload.country,
+        city: payload.city,
+        status: ReportStatus.FACTCHECK_PENDING,
+        dbStatus: ReportDBStatus.PENDING_FOR_MONGODB_CREATION,
         generatedById: requestingUserId,
         // initial counts are 0 by default by prisma
       },
@@ -86,19 +70,28 @@ export async function createDisasterReport(
     );
     const now = new Date();
 
-    const mongoDisasterDocument = {
-      postgresReportId: pgReportId,
-      reporterUserId: requestingUserId,
-      title: payload.title,
+    const mongoDisasterDocument = MongoDBReportSchema.parse({
       description: payload.description,
       incidentType: payload.incidentType,
       severity: payload.severity,
-      incidentTimestamp: payload.incidentTimestamp,
-      location: payload.location,
-      address: payload.address,
-      media: payload.media,
+      reportName: payload.reportName,
+      location: {
+        city: payload.city,
+        country: payload.country,
+        latitude: payload.location.coordinates[1],
+        longitude: payload.location.coordinates[0],
+      },
+
+      incidentTimestamp: payload.incidentTimestamp.toISOString(),
+      media:
+        payload.media?.map((media) => ({
+          type: media.type,
+          url: media.url,
+          caption: media.caption,
+        })) || [],
+      postgresReportId: pgReportId,
+      reporterUserId: requestingUserId,
       factCheck: {
-        // initial factCheck object
         communityScore: { upvotes: 0, downvotes: 0 },
         goService: {
           status: 'PENDING_VERIFICATION',
@@ -108,10 +101,9 @@ export async function createDisasterReport(
         overallPercentage: 0,
         lastCalculatedAt: now,
       },
-      reportTimestamp: now,
-      systemCreatedAt: now,
-      systemUpdatedAt: now,
-    };
+      createdAt: now,
+      updatedAt: now,
+    });
 
     const mongoResult = await disasterCollection.insertOne(
       mongoDisasterDocument,
@@ -133,7 +125,8 @@ export async function createDisasterReport(
         id: pgReportId,
       },
       data: {
-        status: ReportStatus.COMPLETED,
+        status: ReportStatus.FACTCHECK_PENDING,
+        dbStatus: ReportDBStatus.PUBLISHED_IN_MONGODB,
         externalStorageId: mongoDocIDAsString,
         completed_at: now,
       },
@@ -143,35 +136,38 @@ export async function createDisasterReport(
     );
 
     const disasterReportJobPayload: DisasterReportJobPayload = {
+      reportName: payload.reportName,
       postgresReportId: pgReportId,
       mongoDbDocId: mongoDocIDAsString,
-      title: payload.title,
       incidentType: payload.incidentType,
       description: payload.description,
       severity: payload.severity,
       incidentTimestamp: payload.incidentTimestamp.toISOString(),
       latitude: payload.location.coordinates[1],
       longitude: payload.location.coordinates[0],
-      city: payload.address?.city || '',
-      country: payload.address?.country || '',
-      address: payload.address?.fullAddress || `${payload.address?.street ? payload.address.street + ', ' : ''}${payload.address?.district ? payload.address.district + ', ' : ''}${payload.address?.city ? payload.address.city + ', ' : ''}${payload.address?.country || ''}`,
-      media: payload.media?.map((media) => ({ type: media.type, url: media.url, caption: media.caption })),
+      city: payload.city,
+      country: payload.country,
+      media: payload.media?.map((media) => ({
+        type: media.type,
+        url: media.url,
+        caption: media.caption,
+      })),
       reporterUserId: requestingUserId,
-    }
+    };
 
     // set the queue name from env, and publish the job to RabbitMQ
     const queueName = ENV.RABBITMQ_FACTCHECK_QUEUE_NAME;
-    const published = await publishToQueue(queueName, disasterReportJobPayload)
-    let finalReportStatus: ReportStatus
-    let statusUpdateMessage: string
+    const published = await publishToQueue(queueName, disasterReportJobPayload);
+    let finalReportStatus: ReportStatus;
+    let statusUpdateMessage: string;
 
     if (published) {
-      finalReportStatus = ReportStatus.FACTCHECK_PENDING
-      statusUpdateMessage = `[NodeService] Disaster report job published to ${queueName} queue. Report ID: ${pgReportId}`
+      finalReportStatus = ReportStatus.FACTCHECK_PENDING;
+      statusUpdateMessage = `[NodeService] Disaster report job published to ${queueName} queue. Report ID: ${pgReportId}`;
       logger.info(statusUpdateMessage);
     } else {
-      finalReportStatus = ReportStatus.PUBLISHED_FAILED
-      statusUpdateMessage = `[NodeService] Failed to publish disaster report job to ${queueName} queue. Report ID: ${pgReportId}`
+      finalReportStatus = ReportStatus.PUBLISHED_FAILED;
+      statusUpdateMessage = `[NodeService] Failed to publish disaster report job to ${queueName} queue. Report ID: ${pgReportId}`;
       logger.error(statusUpdateMessage);
     }
 
@@ -181,13 +177,13 @@ export async function createDisasterReport(
       data: {
         status: finalReportStatus,
         errorMessage: published ? null : 'Failed to publish to RabbitMQ',
-      }
-    })
+      },
+    });
 
     return {
       postgresReportId: pgReportId,
       mongoDbReportId: mongoDocIDAsString,
-      message: `Disaster report "${pgReportName}" (details: "${payload.title}") created successfully and submitted for fact-checking. Job Dispatch Status: ${finalReportStatus}`,
+      message: `Disaster report "${pgReportName}" created successfully and submitted for fact-checking. Job Dispatch Status: ${finalReportStatus}`,
       currentStatus: finalReportStatus,
       // return other info if Frontend needs it
     };
@@ -216,10 +212,7 @@ export async function createDisasterReport(
   }
 }
 
-export async function getAllDisasterReports(
-  cursor: string,
-  limit: string,
-) {
+export async function getAllDisasterReports(cursor: string, limit: string) {
   const take = parseInt(limit as string, 10) || 10;
   try {
     const reports = await prisma.report.findMany({
@@ -228,15 +221,15 @@ export async function getAllDisasterReports(
         skip: 1, // skip the cursor item
         cursor: {
           id: cursor,
-        }
+        },
       }),
       orderBy: {
         created_at: 'desc',
       },
       where: {
         reportType: ReportType.DISASTER_INCIDENT,
-      }
-    })
+      },
+    });
 
     const hasNextPage = reports.length > take;
     const paginatedReports = hasNextPage ? reports.slice(0, take) : reports;
@@ -245,8 +238,7 @@ export async function getAllDisasterReports(
       data: paginatedReports,
       nextCursor: hasNextPage ? reports[take].id : null,
       hasNextPage,
-    }
-
+    };
   } catch (error) {
     logger.error(`Error fetching disaster reports: ${error}`);
     throw new InternalServerError('Error fetching disaster reports');

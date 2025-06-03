@@ -1,226 +1,12 @@
-// import { ENV } from '@/env';
-// import { getMongoDB } from '@/libs/mongo';
-// import prisma from '@/libs/prisma';
-// import { emitFactCheckUpdateToRoom } from '@/libs/socketManager';
-// import logger from '@/logger';
-// import { DISASTER_COLLECTION_NAME } from '@/services/disasterReports/disasterReports';
-// import { InternalServerError } from '@/utils/errors';
-// import { ReportStatus } from '@prisma/client';
-// import { Channel, ChannelModel, Connection, ConsumeMessage } from 'amqplib';
-// import amqp from 'amqplib';
-// import { Db } from 'mongodb';
-// interface FactCheckResultPayload {
-//   postgresReportId: string;
-//   mongoDocId: string; // As sent by Go
-//   overallConfidence: number;
-//   calculatedScore: number;
-//   status: string; // e.g., "CONFIRMED_BY_GDACS", "FACTCHECK_SERVICE_ERROR"
-//   narrative: string;
-//   evidence?: Array<{
-//     source: string;
-//     url?: string;
-//     summary: string;
-//     confidence: number;
-//     timestamp?: string;
-//   }>; // Timestamp from Go would be string
-//   serviceProvider: string;
-//   processingError?: string;
-//   checkedAt: string; // ISO Date string from Go
-// }
-// let resultsConsumerConnection: ChannelModel | null = null;
-// let resultsConsumerChannel: Channel | null = null;
-// const MAX_CONSUMER_RETRIES = 5;
-// const CONSUMER_RETRY_DELAY = 5000;
-// async function connectAndConsumeResults(attempt = 1): Promise<void> {
-//   try {
-//     logger.info(
-//       `[FactCheckResultConsumer] Attempting to connect and consume results (attempt ${attempt})`,
-//     );
-//     if (!ENV.RABBITMQ_URL) {
-//       throw new InternalServerError('RABBITMQ_URL not set');
-//     }
-//     resultsConsumerConnection = await amqp.connect(ENV.RABBITMQ_URL);
-//     resultsConsumerChannel = await resultsConsumerConnection.createChannel();
-//     logger.info(
-//       '[FactCheckResultConsumer] Connected to RabbitMQ & channel created',
-//     );
-//     resultsConsumerConnection?.on('error', (err: Error) => {
-//       logger.error(
-//         `[FactCheckResultConsumer] Connection error: ${err.message}`,
-//       );
-//     });
-//     resultsConsumerConnection?.on('close', () => {
-//       logger.error('[FactCheckResultConsumer] Connection closed');
-//     });
-//     const queueName = ENV.RABBITMQ_FACTCHECK_RESULT_QUEUE_NAME;
-//     await resultsConsumerChannel?.assertQueue(queueName, { durable: true });
-//     logger.info(`[FactCheckResultConsumer] Asserted queue ${queueName}`);
-//     resultsConsumerChannel.prefetch(1);
-//     logger.info(
-//       `[FactCheckResultConsumer] Starting to consume from results queue '${queueName}'...`,
-//     ); //
-//     resultsConsumerChannel.consume(
-//       queueName,
-//       async (msg: ConsumeMessage | null) => {
-//         if (msg) {
-//           const deliveryTag = msg?.fields.deliveryTag;
-//           let resultPayload: FactCheckResultPayload | null = null;
-//           try {
-//             logger.info(
-//               `[FactCheckResultConsumer] Consuming message. Delivery Tag: ${deliveryTag}`,
-//             );
-//             resultPayload = JSON.parse(
-//               msg?.content.toString(),
-//             ) as FactCheckResultPayload;
-//             logger.info(
-//               `[FactCheckResultConsumer] Parsed results for PG_ID: ${resultPayload.postgresReportId}`,
-//             );
-//             // Get MongoDB connection
-//             const db = await getMongoDB();
-//             const disasterCollection = db.collection(DISASTER_COLLECTION_NAME);
-//             // prepare the update object
-//             const factCheckUpdateForMongo = {
-//               'goService.status': resultPayload.status,
-//               'goService.confidenceScore': resultPayload.overallConfidence,
-//               'goService.narrative': resultPayload.narrative,
-//               'goService.evidence': resultPayload.evidence || [],
-//               'goService.lastCheckedAt': resultPayload.checkedAt
-//                 ? new Date(resultPayload.checkedAt)
-//                 : new Date(),
-//               'goService.serviceProvider': resultPayload.serviceProvider,
-//               'goService.processingError': resultPayload.processingError,
-//               overallPercentage: resultPayload.overallConfidence, // Update the top-level overall percentage
-//               lastCalculatedAt: new Date(resultPayload.checkedAt),
-//             };
-//             const updateResult = await disasterCollection.updateOne(
-//               { postgresReportId: resultPayload.postgresReportId },
-//               { $set: factCheckUpdateForMongo },
-//             );
-//             if (updateResult.modifiedCount === 0) {
-//               logger.error(
-//                 `[FactCheckResultConsumer] MongoDB document not found for pgReportId ${resultPayload.postgresReportId}. Result not saved to Mongo. Discarding message.`,
-//               ); //
-//               resultsConsumerChannel?.nack(msg, false, false); // Don't requeue if data is inconsistent
-//               return;
-//             }
-//             logger.info(
-//               `[FactCheckResultConsumer] Results saved to MongoDB for PG_ID: ${resultPayload.postgresReportId}`,
-//             );
-//             // update postgres report status & denormalize fields
-//             let pgReportStatusUpdate: ReportStatus = ReportStatus.COMPLETED;
-//             if (
-//               resultPayload.status?.toUpperCase().includes('ERROR') ||
-//               resultPayload.processingError
-//             ) {
-//               pgReportStatusUpdate = ReportStatus.FAILED;
-//             }
-//             await prisma.report.update({
-//               where: { id: resultPayload.postgresReportId },
-//               data: {
-//                 factCheckStatus: resultPayload.status,
-//                 factCheckOverallPercentage: resultPayload.overallConfidence,
-//                 factCheckLastUpdatedAt: new Date(resultPayload.checkedAt),
-//                 errorMessage: resultPayload.processingError || null,
-//                 status: pgReportStatusUpdate,
-//               },
-//             });
-//             logger.info(
-//               `[FactCheckResultConsumer] PG Report ${resultPayload.postgresReportId} updated to ${pgReportStatusUpdate} with fact-check results.`,
-//             );
-//             // Broadcast update to connected websockets
-//             emitFactCheckUpdateToRoom(resultPayload.postgresReportId, {
-//               overallPercentage: resultPayload.overallConfidence,
-//               status: resultPayload.status,
-//               narrative: resultPayload.narrative,
-//               lastCalculatedAt: resultPayload.checkedAt,
-//             });
-//             resultsConsumerChannel?.ack(msg);
-//             logger.info(
-//               `[FactCheckResultConsumer] Message acknowledged. Delivery Tag: ${deliveryTag}`,
-//             );
-//           } catch (error) {
-//             logger.error(
-//               `[FactCheckResultConsumer] Error processing message. Delivery Tag: ${deliveryTag}. Error: ${error}`,
-//             );
-//             resultsConsumerChannel?.nack(msg, false, false);
-//           }
-//         } else {
-//           logger.warn(
-//             '[FactCheckResultConsumer] Recieved null message from queue, possibly due to channel closed.',
-//           );
-//         }
-//       },
-//       { noAck: false },
-//     );
-//   } catch (error) {
-//     logger.error(
-//       `[FactCheckResultConsumer] Failed to connect/start consuming results queue: ${error}. Retrying...`,
-//       error,
-//     ); //
-//     if (resultsConsumerConnection)
-//       resultsConsumerConnection.removeAllListeners(); // Clean up before retry
-//     resultsConsumerConnection = null;
-//     resultsConsumerChannel = null;
-//     if (attempt < MAX_CONSUMER_RETRIES) {
-//       setTimeout(
-//         () => connectAndConsumeResults(attempt + 1),
-//         CONSUMER_RETRY_DELAY * attempt,
-//       );
-//     } else {
-//       logger.error(
-//         '[FactCheckResultConsumer] Max retries for initial connection to results queue. Consumer will not start.',
-//       ); //
-//     }
-//   }
-// }
-// export async function startFactCheckResultConsumer() {
-//   if (ENV.RABBITMQ_URL && ENV.RABBITMQ_FACTCHECK_RESULT_QUEUE_NAME) {
-//     logger.info('[FactCheckResultConsumer] Starting consumer...');
-//     await connectAndConsumeResults(1);
-//   } else {
-//     logger.warn(
-//       '[FactCheckResultConsumer] RABBITMQ_URL or RABBITMQ_FACTCHECK_RESULT_QUEUE_NAME not set. Skipping consumer start.',
-//     );
-//   }
-// }
-// export async function stopFactCheckResultConsumer() {
-//   logger.info('[FactCheckResultConsumer] Stopping results consumer...'); //
-//   try {
-//     if (resultsConsumerChannel) await resultsConsumerChannel.close();
-//   } catch (e) {
-//     logger.error('[FactCheckResultConsumer] Error closing results channel:', e);
-//   } //
-//   try {
-//     if (resultsConsumerConnection) await resultsConsumerConnection.close();
-//   } catch (e) {
-//     logger.error(
-//       '[FactCheckResultConsumer] Error closing results connection:',
-//       e,
-//     );
-//   } //
-//   resultsConsumerChannel = null;
-//   resultsConsumerConnection = null;
-//   logger.info(
-//     '[FactCheckResultConsumer] Results consumer stopped and connections closed.',
-//   ); //
-// }
-// src/workers/factCheckResultConsumer.ts
 import { ENV } from '@/env';
-//
 import { getMongoDB } from '@/libs/mongo';
-// Or your actual path to get MongoDB instance
 import prisma from '@/libs/prisma';
-//
-import {  emitFactCheckUpdateToRoom } from '@/libs/socketManager';
-//
+import { emitFactCheckUpdateToRoom } from '@/libs/socketManager';
 import logger from '@/logger';
 import { DISASTER_COLLECTION_NAME } from '@/services/disasterReports/disasterReports';
 import { InternalServerError } from '@/utils/errors';
-//
 import { ReportStatus } from '@prisma/client';
-// From generated Prisma client
 import amqp, { Channel, ChannelModel, ConsumeMessage } from 'amqplib';
-// Connection type from amqplib
 import { Db } from 'mongodb';
 
 // DISASTER_COLLECTION_NAME is used in your service, ensure it's defined or imported if needed here
@@ -351,7 +137,15 @@ async function connectAndConsumeResults(attempt = 1): Promise<void> {
             ) as FactCheckResultPayload;
             logger.info(
               `[FactCheckResultConsumer] Parsed result for PG_ID ${resultPayload.postgresReportId}: Status - ${resultPayload.status}, Confidence - ${resultPayload.overallConfidence}`,
-            ); //
+            );
+
+            logger.debug(
+              `[FactCheckResultConsumer] Full result payload: ${JSON.stringify(
+                resultPayload,
+                null,
+                2,
+              )}`,
+            );
 
             // Validate essential IDs
             if (!resultPayload.postgresReportId || !resultPayload.mongoDocId) {
@@ -462,7 +256,6 @@ async function connectAndConsumeResults(attempt = 1): Promise<void> {
               lastCalculatedAt: resultPayload.checkedAt,
               // You might want to send the whole resultPayload.factCheck or parts of it
             });
-
 
             resultsConsumerChannel?.ack(msg);
             logger.info(

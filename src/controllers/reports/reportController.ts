@@ -1,5 +1,6 @@
 import logger from '@/logger';
 import * as disasterReportService from '@/services/disasterReports/disasterReports';
+import { DisasterIncidentParametersSchema } from '@/types/reports';
 import {
   AuthenticationError,
   BadRequestError,
@@ -13,53 +14,6 @@ const CreateReportSchema = object({
   name: string()
     .min(3, 'Report name is too short')
     .max(150, 'Report name is too long'),
-});
-
-// for disaster (parameters part of the request)
-const DisasterIncidentParametersSchema = object({
-  title: string()
-    .min(3, 'Report title is too short')
-    .max(150, 'Report title is too long'),
-  description: string().min(10, 'Report description is too short').max(5000),
-  incidentType: z.enum(['EARTHQUAKE', 'FLOOD', 'FIRE', 'STORM', 'OTHER'], {
-    required_error: 'Incident type is required',
-    invalid_type_error: 'Invalid incident type',
-  }),
-  severity: z.enum(['UNKNOWN', 'MINOR', 'MODERATE', 'SEVERE'], {
-    required_error: 'Severity is required',
-    invalid_type_error: 'Invalid severity',
-  }),
-  incidentTimestamp: string()
-    .datetime({ message: 'Invalid date format, should be ISO 8601' })
-    .transform((val) => new Date(val)),
-  location: object({
-    city: string().min(1, 'City is required'),
-    country: string().min(1, 'Country is required'),
-    latitude: z
-      .number()
-      .min(-90, 'Latitude must be between -90 and 90')
-      .max(90, 'Latitude must be between -90 and 90'),
-    longitude: z
-      .number()
-      .min(-180, 'Longitude must be between -180 and 180')
-      .max(180, 'Longitude must be between -180 and 180'),
-  }),
-  address: object({
-    street: string().optional(),
-    district: string().optional(),
-    fullAddress: string().optional(),
-  }).optional(),
-  media: z
-    .array(
-      object({
-        type: z.enum(['IMAGE', 'VIDEO']),
-        url: string().url({ message: 'Invalid URL' }),
-        caption: string().max(250).optional(),
-      }),
-    )
-    .max(5, 'Maximum 5 media items allowed')
-    .optional()
-    .default([]),
 });
 
 const CreateReportRequestSchema = z.discriminatedUnion('reportType', [
@@ -87,6 +41,7 @@ export async function CreateReport(
 
     let result;
 
+    //* Switch based on report type, although currently only disaster incident is supported
     switch (reportType) {
       case ReportType.DISASTER_INCIDENT:
         // handle disaster incident report, infer type from validatedRequestBody to get the correct type
@@ -94,7 +49,7 @@ export async function CreateReport(
           .parameters as z.infer<typeof DisasterIncidentParametersSchema>;
 
         const servicePayload: disasterReportService.ValidatedDisasterPayload = {
-          title: disasterParams.title,
+          reportName: name,
           description: disasterParams.description,
           incidentType: disasterParams.incidentType,
           severity: disasterParams.severity,
@@ -106,17 +61,13 @@ export async function CreateReport(
               disasterParams.location.latitude,
             ],
           },
-          // construct address object for MongoDB
-          address: {
-            street: disasterParams.address?.street,
-            district: disasterParams.address?.district,
-            city: disasterParams.location.city,
-            country: disasterParams.location.country,
-            fullAddress: disasterParams.address?.fullAddress,
-          },
+          country: disasterParams.location.country,
+          city: disasterParams.location.city,
           media: disasterParams.media || [],
         };
-        logger.info(`Creating disaster report: ${JSON.stringify(servicePayload)}`);
+        logger.info(
+          `Creating disaster report: ${JSON.stringify(servicePayload)}`,
+        );
         result = await disasterReportService.createDisasterReport(
           servicePayload,
           name,
@@ -137,14 +88,20 @@ export async function CreateReport(
   }
 }
 
-export async function GetAllDiasterReports(req: Request, res: Response, next: NextFunction) {
+export async function GetAllDiasterReports(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   try {
-    const { cursor, limit } = req.query
-    const reports = await disasterReportService.getAllDisasterReports(cursor as string, limit as string);
+    const { cursor, limit } = req.query;
+    const reports = await disasterReportService.getAllDisasterReports(
+      cursor as string,
+      limit as string,
+    );
     return res.status(200).json({ reports });
   } catch (error) {
     logger.error(`Error fetching disaster reports: ${error}`);
     return next(error);
   }
-
 }
