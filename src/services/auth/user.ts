@@ -5,6 +5,7 @@ import logger from '@/logger';
 import {
   AuthenticationError,
   ConflictError,
+  EmailValidationError,
   NotFoundError,
 } from '@/utils/errors';
 import bcrypt from 'bcryptjs';
@@ -179,7 +180,7 @@ const verifyEmail = async (token: string) => {
     };
   } catch (error) {
     logger.error('Error verify email', error);
-    throw error;
+    throw new EmailValidationError('There was an error with email verification');
   }
 };
 
@@ -226,7 +227,7 @@ const resendEmail = async (email: string) => {
     };
   } catch (error) {
     logger.error('Error resend email', error);
-    throw error;
+    throw new EmailValidationError('There was an error with email verification');
   }
 };
 
