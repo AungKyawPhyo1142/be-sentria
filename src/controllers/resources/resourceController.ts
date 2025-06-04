@@ -2,6 +2,7 @@ import logger from '@/logger';
 import * as resourceService from '@/services/resources/resources';
 import {
   AuthenticationError,
+  NotFoundError,
   ValidationError,
 } from '@/utils/errors';
 
@@ -66,6 +67,15 @@ const CreateResourceRequestSchema = z.discriminatedUnion('resourceType', [
   }),
 ])
 
+const UpdateResourceSchema = object({
+  name: string()
+    .min(3, 'Resource name is too short')
+    .max(150, 'Resource name is too long'),
+  resourceType: z.enum([ResourceType.SURVIVAL, ResourceType.HOTLINE, ResourceType.FIRST_AID]),
+  parameters: ResourceParametersSchema,
+});
+
+
 export async function CreateResource(
   req: Request,
   res: Response,
@@ -125,4 +135,61 @@ export async function CreateResource(
     logger.error(`Error creating resource: ${error}`);
     return next(error);
   }
+}
+
+export async function UpdateResource(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+){
+  try{
+      const user = req.user;
+      if(!user){
+        throw new AuthenticationError('User not authenticated');
+      }
+
+      const resourceId = req.params.id;
+      if(!resourceId){
+        throw new NotFoundError('Resource ID is required');
+      }
+
+      const validatedRequestBody = UpdateResourceSchema.parse(req.body);
+      const { resourceType, name, parameters } = validatedRequestBody;
+
+      const servicePayload: resourceService.ValidatedResourcePayload = {
+        description: parameters.description,
+        resourceType: resourceType,
+        location: {
+          type: 'Point',
+          coordinates: [
+            parameters.location.longitude,
+            parameters.location.latitude,
+          ],
+        },
+        address: {
+          street: parameters.address?.street,
+          district: parameters.address?.district,
+          city: parameters.location.city,
+          country: parameters.location.country,
+          fullAddress: parameters.address?.fullAddress,
+        },
+        media: parameters.media || [],
+      };
+
+      logger.info(`Updating resource: ${JSON.stringify(servicePayload)}`);
+      const result = await resourceService.updateResource(
+        resourceId,
+        servicePayload,
+        name,
+        user,
+      );
+      return res.status(200).json({ result });
+  }catch(error){
+    if (error instanceof z.ZodError) {
+      return next(new ValidationError(error.issues));
+  }
+
+  logger.error(`Error updating resource: ${error}`);
+  return next(error);
+}
 }

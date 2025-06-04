@@ -1,6 +1,6 @@
 import { getMongoDB } from '@/libs/mongo';
 import logger from '@/logger';
-import { InternalServerError } from '@/utils/errors';
+import { AuthenticationError, InternalServerError, NotFoundError } from '@/utils/errors';
 import { PrismaClient, User } from '@prisma/client';
 import { Collection } from 'mongodb';
 
@@ -82,10 +82,10 @@ export async function createResource(
     const now = new Date();
 
     const mongoResourceDocument = {
-      postgresReportId: pgResourceId,
+      postgresResourceId: pgResourceId,
       userId: requestingUserId,
       description: payload.description,
-      incidentType: payload.resourceType,
+      resourceType: payload.resourceType,
       location: payload.location,
       address: payload.address,
       media: payload.media,
@@ -126,13 +126,101 @@ export async function createResource(
     }
 
     return {
-      postgresReportId: pgResourceId,
-      mongoDbReportId: mongoDocIDAsString,
-      message: `Disaster report "${pgResourceName}" created successfully`,
+      postgresResourceId: pgResourceId,
+      mongoDbResourceId: mongoDocIDAsString,
+      message: `Resource "${pgResourceName}" created successfully`,
     };
 
   } catch (error) {
     logger.error(`Error creating resource: ${error}`);
     throw error;
   }
+}
+
+export async function updateResource(
+  resourceId: string,
+  payload: ValidatedResourcePayload,
+  pgResourceName: string, 
+  user: User,
+){
+    logger.info(`Updating resource for user: ${user.id}`);
+    const requestingUserId = user.id;
+
+    try{
+      const existingResource = await prisma.resource.findUnique({
+        where:{
+          id: resourceId
+        }
+      });
+
+      if(!existingResource){
+        throw new NotFoundError('Resource not found');
+      };
+
+      if(existingResource.generatedById !== requestingUserId){
+        throw new AuthenticationError("You are not authorized to update this resource");
+      }
+
+      logger.info(`Updating PG resource ${resourceId} for user: ${user.id}`);
+
+      const updatedResource = await prisma.resource.update({
+        where: {
+          id: resourceId,
+        },
+        data: {
+          name: pgResourceName,
+          resourceType: payload.resourceType,
+          status: ResourceStatus.AWAITING_DETAILS,
+          description: payload.description,
+          location: payload.location,
+          updated_at: new Date(),
+        }
+      });
+
+      if(!updatedResource){
+        throw new NotFoundError('Resource not found in PG');
+      }
+
+      const db = await getMongoDB();
+      const resourceCollection: Collection = db.collection(
+        RESOURCE_COLLECTION_NAME
+      );
+      
+      //update mongoDB document
+      const updatedMongoResource = await resourceCollection.updateOne(
+        {
+          postgresResourceId: resourceId,
+        },
+        {
+          $set: {
+            name: pgResourceName,
+            resourceType: payload.resourceType,
+            status: ResourceStatus.AWAITING_DETAILS,
+            description: payload.description,
+            location: payload.location,
+            address: payload.address,
+            media: payload.media,
+            systemUpdatedAt: new Date(),
+          }
+        }
+      )
+
+      if(updatedMongoResource.matchedCount === 0){
+        throw new NotFoundError('Resource not found in mongoDB');
+      }
+
+     if(updatedMongoResource.modifiedCount === 0){
+      logger.warn(`Failed to update mongoDB resource ${resourceId} for user: ${user.id}`);
+     }
+
+     return {
+      resourceId,
+      message: `Resource "${pgResourceName}" updated successfully`,
+      updatedAt : new Date(),
+     }
+    }catch(error){
+      logger.error(`Error updating resource: ${error}`);
+      throw error;
+    }
+
 }
