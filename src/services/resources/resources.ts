@@ -256,3 +256,54 @@ export async function getResources(limit: number = 10, skip: number = 0) {
     throw error;
   }
 }
+
+export async function deleteResource(resourceId: string, user: User){
+  logger.info(`Deleting resource ${resourceId} for user: ${user.id}`);
+  const requestingUserId = user.id;
+  
+  try {
+    const existingResource = await prisma.resource.findUnique({
+      where: {
+        id: resourceId
+      }
+    });
+    
+    if (!existingResource) {
+      throw new NotFoundError('Resource not found in PG');
+    }
+    
+    if (existingResource.generatedById !== requestingUserId) {
+      throw new AuthenticationError('You are not authorized to delete this resource');
+    }
+    
+    const db = await getMongoDB();
+    const resourceCollection: Collection = db.collection(RESOURCE_COLLECTION_NAME);
+    
+    const mongoDeleteResult = await resourceCollection.deleteOne({
+      postgresResourceId: resourceId
+    });
+    
+    if (mongoDeleteResult.deletedCount === 0) {
+      logger.warn(`MongoDB resource with PostgreSQL ID ${resourceId} not found`);
+      throw new NotFoundError('Resource not found in mongoDB');
+    }
+    
+    // delete from PostgreSQL
+    await prisma.resource.delete({
+      where: {
+        id: resourceId
+      }
+    });
+    
+    logger.info(`PostgreSQL resource ${resourceId} deleted successfully`);
+    
+    return {
+      resourceId,
+      message: `Resource "${existingResource.name}" deleted successfully`,
+      deletedAt: new Date()
+    };
+  } catch (error) {
+    logger.error(`Error deleting resource: ${error}`);
+    throw error;
+  }
+}

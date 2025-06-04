@@ -148,6 +148,11 @@ export async function UpdateResource(
         throw new AuthenticationError('User not authenticated');
       }
 
+      if(!user.verified_profile){
+        logger.info(`User is not verified user: ${user.username}`);
+        throw new AuthenticationError('User is not verified');
+      }
+
       const resourceId = req.params.id;
       if(!resourceId){
         throw new NotFoundError('Resource ID is required');
@@ -210,3 +215,28 @@ export async function GetResources(
     return next(error);
   }
 }
+
+export async function DeleteResource(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+){
+  try{
+    const user = req.user;
+    if(!user){
+      throw new AuthenticationError('User not authenticated');
+    }
+
+    const resourceId = req.params.id;
+    if(!resourceId){
+      throw new NotFoundError('Resource ID is required');
+    }
+    
+    const result = await resourceService.deleteResource(resourceId, user);
+    return res.status(200).json(result);
+  }catch(error){
+    logger.error(`Error deleting resource: ${error}`);
+    return next(error);
+  }
+}
+  
