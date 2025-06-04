@@ -193,3 +193,20 @@ export async function UpdateResource(
   return next(error);
 }
 }
+
+export async function GetResources(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+    const skip = req.query.skip ? parseInt(req.query.skip as string) : 0;
+    
+    const result = await resourceService.getResources(limit, skip);
+    return res.status(200).json(result);
+  } catch (error) {
+    logger.error(`Error getting resources: ${error}`);
+    return next(error);
+  }
+}

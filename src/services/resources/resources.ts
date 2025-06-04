@@ -222,5 +222,37 @@ export async function updateResource(
       logger.error(`Error updating resource: ${error}`);
       throw error;
     }
+}
 
+export async function getResources(limit: number = 10, skip: number = 0) {
+  try {
+    logger.info(`Getting resources with limit: ${limit}, skip: ${skip}`);
+    
+    const db = await getMongoDB();
+    const resourceCollection: Collection = db.collection(RESOURCE_COLLECTION_NAME);
+    
+    const totalCount = await resourceCollection.countDocuments();
+    
+    const resources = await resourceCollection
+      .find({})
+      .sort({ systemCreatedAt: -1 }) 
+      .skip(skip)
+      .limit(limit)
+      .toArray();
+    
+    logger.info(`Found ${resources.length} resources`);
+    
+    return {
+      resources,
+      pagination: {
+        total: totalCount,
+        limit,
+        skip,
+        hasMore: skip + resources.length < totalCount
+      }
+    };
+  } catch (error) {
+    logger.error(`Error getting resources: ${error}`);
+    throw error;
+  }
 }
