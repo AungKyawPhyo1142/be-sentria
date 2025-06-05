@@ -264,7 +264,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name\": \"Emergency Shelter Locations\",\n  \"resourceType\": \"SURVIVAL\",\n  \"parameters\": {\n    \"description\": \"Updated list of emergency shelter locations in Yangon\",\n    \"location\": {\n      \"city\": \"Yangon\",\n      \"country\": \"Myanmar\",\n      \"latitude\": 16.8409,\n      \"longitude\": 96.1735\n    },\n    \"address\": {\n      \"street\": \"123 Main Street\",\n      \"district\": \"Downtown\",\n      \"fullAddress\": \"123 Main Street, Downtown, Yangon\"\n    },\n    \"media\": [\n      {\n        \"type\": \"IMAGE\",\n        \"url\": \"https://example.com/images/shelter-map.jpg\",\n        \"caption\": \"Map of emergency shelters\"\n      }\n    ]\n  }\n}",
+							"raw": "{\n  \"name\": \"Emergency Shelter Location\",\n  \"resourceType\": \"HOTLINE\",\n  \"parameters\": {\n    \"description\": \"Updated list of emergency shelter locations in Yangon\",\n    \"location\": {\n      \"city\": \"Yangon\",\n      \"country\": \"Myanmar\",\n      \"latitude\": 16.8409,\n      \"longitude\": 96.1735\n    },\n    \"address\": {\n      \"street\": \"123 Main Street\",\n      \"district\": \"Downtown\",\n      \"fullAddress\": \"123 Main Street, Downtown, Yangon\"\n    },\n    \"media\": [\n      {\n        \"type\": \"IMAGE\",\n        \"url\": \"https://example.com/images/shelter-map.jpg\",\n        \"caption\": \"Map of emergency shelters\"\n      }\n    ]\n  }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -315,6 +315,24 @@
 					"request": {
 						"method": "GET",
 						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Get Resource By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{HOST}}/resource/683fecd54c6c0d392fe340ed",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"resource",
+								"683fecd54c6c0d392fe340ed"
+							]
+						}
 					},
 					"response": []
 				}
