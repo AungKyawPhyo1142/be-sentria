@@ -216,6 +216,26 @@ export async function GetResources(
   }
 }
 
+export async function GetResourceById(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+){
+  try{
+    const resourceId = req.params.id;
+    if(!resourceId){
+      throw new NotFoundError('Resource ID is required');
+    }
+
+    const result = await resourceService.getResourceById(resourceId);
+    return res.status(200).json(result);
+  
+  }catch(error){
+    logger.error(`Error getting resource by id: ${error}`);
+    return next(error);
+  }
+}
+
 export async function DeleteResource(
   req: Request,
   res: Response,

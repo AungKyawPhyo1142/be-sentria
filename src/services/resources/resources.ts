@@ -2,7 +2,7 @@ import { getMongoDB } from '@/libs/mongo';
 import logger from '@/logger';
 import { AuthenticationError, InternalServerError, NotFoundError } from '@/utils/errors';
 import { PrismaClient, User } from '@prisma/client';
-import { Collection } from 'mongodb';
+import { Collection, ObjectId } from 'mongodb';
 
 enum ResourceType {
   SURVIVAL = 'SURVIVAL',
@@ -253,6 +253,26 @@ export async function getResources(limit: number = 10, skip: number = 0) {
     };
   } catch (error) {
     logger.error(`Error getting resources: ${error}`);
+    throw error;
+  }
+}
+
+export async function getResourceById(resourceId: string){
+  try{
+    logger.info(`Getting resource by id: ${resourceId}`);
+    const db = await getMongoDB();
+    const resourceCollection: Collection = db.collection(RESOURCE_COLLECTION_NAME);
+    const resource = await resourceCollection.findOne({
+      _id: new ObjectId(resourceId)
+    });
+    
+    if(!resource){
+      throw new NotFoundError('Resource not found');
+    }
+    
+    return resource;
+  }catch(error){
+    logger.error(`Error getting resource by id: ${error}`);
     throw error;
   }
 }
