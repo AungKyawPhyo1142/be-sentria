@@ -67,7 +67,7 @@ async function startServer() {
     app.use(
       cors({
         credentials: true,
-        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
         origin: ENV.CORS_ORIGIN,
         preflightContinue: true,
       }),
