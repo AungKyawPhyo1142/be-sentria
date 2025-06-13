@@ -1,11 +1,10 @@
 {
 	"info": {
-		"_postman_id": "09bd5c18-f7c0-496b-84ad-62ab7b57a514",
+		"_postman_id": "0bf62de2-4c10-4320-951d-b6148c056048",
 		"name": "Sentria",
 		"description": "- inside variables, make sure HOST is pointing to the port number your backend is running",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "35166542",
-		"_collection_link": "https://sentria.postman.co/workspace/sentria-db~003d23dd-cccc-45fd-ae9e-79064ffc9c56/collection/35166542-09bd5c18-f7c0-496b-84ad-62ab7b57a514?action=share&source=collection_link&creator=35166542"
+		"_exporter_id": "28564017"
 	},
 	"item": [
 		{
@@ -35,7 +34,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"test+8@gmail.com\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"username\": \"johndoe8\",\n    \"password\": \"Password@123\",\n    \"birthday\": \"1990-01-01\",\n    \"country\": \"US\"\n}",
+							"raw": "{\n    \"email\": \"test+15@gmail.com\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"username\": \"johndoe15\",\n    \"password\": \"Password@123\",\n    \"birthday\": \"1990-01-01\",\n    \"country\": \"US\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -62,7 +61,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"kyi+8@gmail.com\",\n    \"password\": \"Password@123\"\n}",
+							"raw": "{\n    \"email\": \"test+15@gmail.com\",\n    \"password\": \"Password@123\"\n\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -88,14 +87,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{HOST}}/auth/verify-email/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEwLCJpYXQiOjE3NDcyMzcwMzIsImV4cCI6MTc0NzMyMzQzMn0.moaxKs48lIiSzhjiDk-pxrWwOhYKoLrn05D97vFv80M",
+							"raw": "{{HOST}}/auth/verify-email/[PUT TOKEN HERE]",
 							"host": [
 								"{{HOST}}"
 							],
 							"path": [
 								"auth",
 								"verify-email",
-								"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEwLCJpYXQiOjE3NDcyMzcwMzIsImV4cCI6MTc0NzMyMzQzMn0.moaxKs48lIiSzhjiDk-pxrWwOhYKoLrn05D97vFv80M"
+								"[PUT TOKEN HERE]"
 							]
 						}
 					},
@@ -108,7 +107,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"test+8@gmail.com\"\n}",
+							"raw": "{\n    \"email\": \"test+15@gmail.com\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -132,37 +131,16 @@
 			"description": "This folder is for authorization related endpoints"
 		},
 		{
-			"name": "User",
+			"name": "Websocket",
 			"item": [
 				{
-					"name": "User Details By ID",
+					"name": "Send test update to websocket",
 					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{HOST}}/users/1",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"users",
-								"1"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Update",
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "PATCH",
+						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"id\" : 1,\n    \"country\": \"Bangkok\"\n}",
+							"raw": "{\n    \"reportId\": \"cmbduy3k10001itid45soh9w1\",\n        \"factCheckOverallPercentage\":12,\n    \"status\":\"update irl\",\n    \"narrative\":\"update irl\",\n    \"lastCalculatedAt\":\"\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -170,62 +148,169 @@
 							}
 						},
 						"url": {
-							"raw": "{{HOST}}/users/1",
+							"raw": "{{HOST}}/example/test-websocket",
 							"host": [
 								"{{HOST}}"
 							],
 							"path": [
-								"users",
-								"1"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Soft Delete",
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{HOST}}/users/1",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"users",
-								"1"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Recover",
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "PATCH",
-						"header": [],
-						"url": {
-							"raw": "{{HOST}}/users/1/recover",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"users",
-								"1",
-								"recover"
+								"example",
+								"test-websocket"
 							]
 						}
 					},
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Reports",
+			"item": [
+				{
+					"name": "Create a disaster report",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reportType\": \"DISASTER_INCIDENT\",\n  \"name\": \"Earthquake in Mandalay - 2025-03-28\",\n  \"parameters\": {\n    \"title\": \"Earthquake in Mandalay\",\n    \"description\": \"A major earthquake happendin Mandalay. Might have severe impact\",\n    \"incidentType\": \"EARTHQUAKE\",\n    \"severity\": \"SEVERE\",\n    \"incidentTimestamp\": \"2025-03-28T10:00:00Z\",\n    \"location\": {\n      \"city\": \"Mandalay\",\n      \"country\": \"Myanmar\",\n      \"latitude\": 21.9588,\n      \"longitude\": 96.0891\n    },\n    \"address\": {\n      \"district\": \"Mandalay\",\n      \"fullAddress\": \"Mandalay, Myanmar\"\n    },\n    \"media\": [\n      {\n        \"type\": \"IMAGE\",\n        \"url\": \"https://unsplash.com/photos/gray-and-yellow-concrete-buildings-under-white-clouds-during-daytime-q5DNjRaAJo4\",\n        \"caption\": \"Some impact in Mandalay\"\n      }\n    ]\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{HOST}}/report/create",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"report",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get a disaster report by reportId",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{HOST}}/report/cmb8504mp0001itb0ocwzw5h1",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"report",
+								"cmb8504mp0001itb0ocwzw5h1"
+							],
+							"query": [
+								{
+									"key": "reportId",
+									"value": "cmatmy46m0001it2u37whonhi",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get all disaster reports",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reportType\": \"DISASTER_INCIDENT\",\n  \"name\": \"Earthquake in Mandalay - 2025-05-18\",\n  \"parameters\": {\n    \"title\": \"Earthquake in Mandalay\",\n    \"description\": \"A minor earthquake happend around 3.30PM in Mandalay. Might have slight impact\",\n    \"incidentType\": \"EARTHQUAKE\",\n    \"severity\": \"MINOR\",\n    \"incidentTimestamp\": \"2025-05-18T15:30:00.000Z\",\n    \"location\": {\n      \"city\": \"Mandalay\",\n      \"country\": \"Myanmar\",\n      \"latitude\": 21.9588,\n      \"longitude\": 96.0891\n    },\n    \"address\": {\n      \"district\": \"Mandalay\",\n      \"fullAddress\": \"Mandalay, Myanmar\"\n    },\n    \"media\": [\n      {\n        \"type\": \"IMAGE\",\n        \"url\": \"https://unsplash.com/photos/gray-and-yellow-concrete-buildings-under-white-clouds-during-daytime-q5DNjRaAJo4\",\n        \"caption\": \"Some impact in Mandalay\"\n      }\n    ]\n  }\n}"
+						},
+						"url": {
+							"raw": "{{HOST}}/report",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"report"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "RabbitMQ",
+			"item": [
+				{
+					"name": "Send message to Queue",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"Report creation 1\",\n    \"data\": {\n        \"testId\": 126,\n        \"payload\": \"data...\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{HOST}}/example/test-rabbitmq",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"example",
+								"test-rabbitmq"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Send Bulk Test Reports",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{HOST}}/goTest/send-bulk-test-jobs",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"goTest",
+								"send-bulk-test-jobs"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Example (Get Random Number)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/example",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"example"
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"event": [

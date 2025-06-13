@@ -1,4 +1,4 @@
-import { DatabaseError } from './utils/errors';
+import { DatabaseError, InternalServerError } from './utils/errors';
 
 export const ENV = {
   APP: process.env.APP || 'be-sentria',
@@ -12,6 +12,12 @@ export const ENV = {
     process.env.RESET_PASSWORD_SENDER_EMAIL || 'sentria.platform@gmail.com',
   FRONTEND_URL: process.env.FRONTEND_URL || 'localhost:8080',
   MONGO_URI: process.env.MONGO_URI,
+  RABBITMQ_URL: process.env.RABBITMQ_URL,
+  RABBITMQ_FACTCHECK_QUEUE_NAME:
+    process.env.RABBITMQ_FACTCHECK_QUEUE_NAME || 'sentria_factcheck_jobs',
+  RABBITMQ_FACTCHECK_RESULT_QUEUE_NAME:
+    process.env.RABBITMQ_FACTCHECK_RESULT_QUEUE_NAME ||
+    'sentria_factcheck_results',
 };
 
 if (ENV.NODE_ENV === 'local' && !process.env.CORS_ORIGIN) {
@@ -24,4 +30,14 @@ if (ENV.NODE_ENV === 'dev' && process.env.DEV_DATABASE_URL) {
 
 if (!ENV.MONGO_URI) {
   throw new DatabaseError('MONGO_URI is not defined');
+}
+
+if (
+  !ENV.RABBITMQ_URL ||
+  !ENV.RABBITMQ_FACTCHECK_QUEUE_NAME ||
+  !ENV.RABBITMQ_FACTCHECK_RESULT_QUEUE_NAME
+) {
+  throw new InternalServerError(
+    'RABBITMQ_URL | RABBITMQ_FACTCHECK_QUEUE | RABBITMQ_FACTCHECK_RESULT_QUEUE is not defined',
+  );
 }
