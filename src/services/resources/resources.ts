@@ -3,6 +3,7 @@ import logger from '@/logger';
 import { AuthenticationError, InternalServerError, NotFoundError } from '@/utils/errors';
 import { PrismaClient, User } from '@prisma/client';
 import { Collection, ObjectId } from 'mongodb';
+import { deleteFromSupabase } from './upload';
 
 enum ResourceType {
   SURVIVAL = 'SURVIVAL',
@@ -299,16 +300,28 @@ export async function deleteResource(resourceId: string, user: User){
     const db = await getMongoDB();
     const resourceCollection: Collection = db.collection(RESOURCE_COLLECTION_NAME);
     
+    const resourceDocument = await resourceCollection.findOne({
+      postgresResourceId: resourceId
+    });
+    
+    if (!resourceDocument) {
+      logger.warn(`MongoDB resource with PostgreSQL ID ${resourceId} not found`);
+      throw new NotFoundError('Resource not found in mongoDB');
+    }
+    
+    const mediaItems = resourceDocument.media || [];
+    const imageFilenames = [];
+        
     const mongoDeleteResult = await resourceCollection.deleteOne({
       postgresResourceId: resourceId
     });
     
     if (mongoDeleteResult.deletedCount === 0) {
-      logger.warn(`MongoDB resource with PostgreSQL ID ${resourceId} not found`);
-      throw new NotFoundError('Resource not found in mongoDB');
+      logger.warn(`Failed to delete MongoDB resource with PostgreSQL ID ${resourceId}`);
+    } else {
+      logger.info(`MongoDB resource with PostgreSQL ID ${resourceId} deleted successfully`);
     }
     
-    // delete from PostgreSQL
     await prisma.resource.delete({
       where: {
         id: resourceId
@@ -317,10 +330,28 @@ export async function deleteResource(resourceId: string, user: User){
     
     logger.info(`PostgreSQL resource ${resourceId} deleted successfully`);
     
+    for (const mediaItem of mediaItems) {
+      if (mediaItem.type === 'IMAGE' && mediaItem.url) {
+        try {
+          const urlParts = mediaItem.url.split('/');
+          const filename = urlParts[urlParts.length - 1];
+          
+          if (filename) {
+            logger.info(`Deleting image ${filename} from Supabase`);
+            await deleteFromSupabase(filename);
+            imageFilenames.push(filename);
+          }
+        } catch (deleteError) {
+          logger.error(`Error deleting image from Supabase: ${deleteError}`);
+        }
+      }
+    }
+    
     return {
       resourceId,
       message: `Resource "${existingResource.name}" deleted successfully`,
-      deletedAt: new Date()
+      deletedAt: new Date(),
+      deletedImages: imageFilenames.length > 0 ? imageFilenames : undefined
     };
   } catch (error) {
     logger.error(`Error deleting resource: ${error}`);

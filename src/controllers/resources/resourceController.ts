@@ -1,5 +1,6 @@
 import logger from '@/logger';
 import * as resourceService from '@/services/resources/resources';
+import { uploadToSupabase } from '@/services/resources/upload';
 import {
   AuthenticationError,
   NotFoundError,
@@ -120,6 +121,25 @@ export async function CreateResource(
       },
       media: resourceParams.media || [],
     };
+    
+    if (req.file) {
+      try {
+        logger.info(`Uploading resource image for user: ${user.id}`);
+        const uploadResponse = await uploadToSupabase(req.file, user.id);
+        
+        const mediaItem = {
+          type: 'IMAGE' as const,
+          url: uploadResponse.url,
+          caption: req.body.imageCaption || 'Resource image'
+        };
+        
+        servicePayload.media = [mediaItem, ...(servicePayload.media || [])];
+        
+        logger.info(`Successfully uploaded resource image: ${uploadResponse.url}`);
+      } catch (uploadError) {
+        logger.error(`Error uploading resource image: ${uploadError}`);
+      }
+    }
 
     logger.info(`Creating resource: ${JSON.stringify(servicePayload)}`);
     result = await resourceService.createResource(
@@ -180,6 +200,25 @@ export async function UpdateResource(
         },
         media: parameters.media || [],
       };
+      
+      if (req.file) {
+        try {
+          logger.info(`Uploading resource image for user: ${user.id}`);
+          const uploadResponse = await uploadToSupabase(req.file, user.id);
+          
+          const mediaItem = {
+            type: 'IMAGE' as const,
+            url: uploadResponse.url,
+            caption: req.body.imageCaption || 'Resource image'
+          };
+          
+          servicePayload.media = [mediaItem, ...(servicePayload.media || [])];
+          
+          logger.info(`Successfully uploaded resource image: ${uploadResponse.url}`);
+        } catch (uploadError) {
+          logger.error(`Error uploading resource image: ${uploadError}`);
+        }
+      }
 
       logger.info(`Updating resource: ${JSON.stringify(servicePayload)}`);
       const result = await resourceService.updateResource(
