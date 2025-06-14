@@ -31,12 +31,14 @@ type UserUpdateData = Partial<{
 }>;
 
 const details = async (userId: number) => {
-  const user = await prisma.user.findFirst({ where: { id: userId, deleted_at: null } });
-  
+  const user = await prisma.user.findFirst({
+    where: { id: userId, deleted_at: null },
+  });
+
   if (!user) {
     throw new NotFoundError('User not found');
   }
-  
+
   const userInfo: UserDetails = {
     id: user.id,
     firstName: user.firstName,
@@ -53,69 +55,66 @@ const details = async (userId: number) => {
     updated_at: user.updated_at || null,
     deleted_at: user.deleted_at || null,
   };
-  
+
   return userInfo;
 };
 
-const update = async ( 
-  id : number, 
-  updateData: UserUpdateData
-  ) => {
-    const user = await prisma.user.findUnique({ where: { id: id } });
+const update = async (id: number, updateData: UserUpdateData) => {
+  const user = await prisma.user.findUnique({ where: { id: id } });
 
-    if (!user) {
-      throw new NotFoundError('User not found');
-    }
+  if (!user) {
+    throw new NotFoundError('User not found');
+  }
 
-    const filteredData = Object.fromEntries(
-      Object.entries(updateData).filter(([_, value]) => value !== undefined)
-    );
-  
-    const updatedUser = await prisma.user.update({
-      where: { id },
-      data: {
-        ...filteredData,
-        updated_at: new Date(),
-      },
-    });
-  
-    return updatedUser;
-}
+  const filteredData = Object.fromEntries(
+    Object.entries(updateData).filter(([_, value]) => value !== undefined),
+  );
 
-const softDelete = async (id: number) =>{
-  const user = await prisma.user.findUnique({where: {id}});
+  const updatedUser = await prisma.user.update({
+    where: { id },
+    data: {
+      ...filteredData,
+      updated_at: new Date(),
+    },
+  });
 
-  if(!user){
+  return updatedUser;
+};
+
+const softDelete = async (id: number) => {
+  const user = await prisma.user.findUnique({ where: { id } });
+
+  if (!user) {
     throw new NotFoundError('User not Found');
   }
 
   const deletedUser = await prisma.user.update({
-    where:{id},
-    data:{
+    where: { id },
+    data: {
       deleted_at: new Date(),
-      updated_at: new Date()
-    }
-  })
+      updated_at: new Date(),
+    },
+  });
 
   return deletedUser;
-}
+};
 
-const recover = async (id:number) => {
-  const user = await prisma.user.findUnique({where: {id}});
+const recover = async (id: number) => {
+  const user = await prisma.user.findUnique({ where: { id } });
 
-  if(!user || user.deleted_at === null){
-    throw new NotFoundError("User not found or already active");
+  if (!user || user.deleted_at === null) {
+    throw new NotFoundError('User not found or already active');
   }
 
   const recoverUser = await prisma.user.update({
-    where: {id},
-    data:{
+    where: { id },
+    data: {
       deleted_at: null,
       updated_at: new Date(),
-    }
-  })
+    },
+  });
 
   return recoverUser;
-}
+};
 
 export { details, update, softDelete, recover };

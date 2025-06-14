@@ -4,6 +4,7 @@ import { Router } from 'express';
 
 const router = Router();
 
-router.post('/create', secureRoute(),reportController.CreateReport);
+router.post('/create', secureRoute(), reportController.CreateReport);
+router.get('/', secureRoute(), reportController.GetAllDiasterReports);
 
 export default router;
