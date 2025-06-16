@@ -5,7 +5,7 @@ import { boolean, date, object, string, ZodError } from 'zod';
 import { uploadToSupabase, deleteFromSupabase } from '@/services/user/upload';
 
 const userDetailSchema = object({
-  firstName: string().optional(), 
+  firstName: string().optional(),
   lastName: string().optional(),
   profile_image: string().nullable().optional(),
   email: string().email().optional(),
@@ -15,7 +15,6 @@ const userDetailSchema = object({
   birthday: date().nullable().optional(),
   country: string().optional(),
 });
-
 
 const details = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -57,21 +56,20 @@ const update = async (req: Request, res: Response, next: NextFunction) => {
         }
       }
 
-      const response = await userService.update(userId, updateData);
-  
-      return res.status(200).json(response);
-  
-    } catch (error) {
-      if (error instanceof ZodError) {
-        return next(new ValidationError(error.issues));
-      } else {
-        return next(error);
-      }
-    }
-};  
+    const response = await userService.update(userId, updateData);
 
-const softDelete = async (req: Request, res:Response,next: NextFunction) => {
-  try{
+    return res.status(200).json(response);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return next(new ValidationError(error.issues));
+    } else {
+      return next(error);
+    }
+  }
+};
+
+const softDelete = async (req: Request, res: Response, next: NextFunction) => {
+  try {
     const userId = parseInt(req.params.id, 10);
 
     if (isNaN(userId)) {
@@ -82,17 +80,17 @@ const softDelete = async (req: Request, res:Response,next: NextFunction) => {
       });
     }
     const response = await userService.softDelete(userId);
-    return res.status(200).json(response)
-  }catch(error){
+    return res.status(200).json(response);
+  } catch (error) {
     return next(error);
   }
-}
+};
 
-const recover = async(req: Request, res: Response, next: NextFunction) => {
-  try{
+const recover = async (req: Request, res: Response, next: NextFunction) => {
+  try {
     const userId = parseInt(req.params.id, 10);
 
-    if(isNaN(userId)){
+    if (isNaN(userId)) {
       return res.status(400).json({
         code: 'INVALID_USER_ID',
         message: 'User ID must be a valid number',
@@ -102,9 +100,9 @@ const recover = async(req: Request, res: Response, next: NextFunction) => {
 
     const response = await userService.recover(userId);
     return res.status(200).json(response);
-  }catch(error){
-    return next(error)
+  } catch (error) {
+    return next(error);
   }
-}
- 
-export { details, update, softDelete, recover};
+};
+
+export { details, update, softDelete, recover };
