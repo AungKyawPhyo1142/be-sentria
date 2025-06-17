@@ -1,5 +1,6 @@
 import logger from '@/logger';
 import * as disasterReportService from '@/services/disasterReports/disasterReports';
+import { uploadToSupabase } from '@/services/disasterReports/upload';
 import { DisasterIncidentParametersSchema } from '@/types/reports';
 import {
   AuthenticationError,
@@ -36,6 +37,14 @@ export async function CreateReport(
 
     logger.info(`got a request to create report for user: ${user.username}`);
 
+    if (typeof req.body?.parameters === 'string') {
+      try {
+        req.body.parameters = JSON.parse(req.body.parameters);
+      } catch (e) {
+        return next(new BadRequestError('Invalid parameters JSON'));
+      }
+    }
+
     const validatedRequestBody = CreateReportRequestSchema.parse(req.body);
     const { reportType, name } = validatedRequestBody;
 
@@ -65,6 +74,29 @@ export async function CreateReport(
           city: disasterParams.location.city,
           media: disasterParams.media || [],
         };
+
+        if (req.file) {
+          try {
+            logger.info(`Uploading report image for user: ${user.id}`);
+            const uploadResponse = await uploadToSupabase(req.file, user.id);
+
+            const mediaItem = {
+              type: 'IMAGE' as const,
+              url: uploadResponse.url,
+              caption: req.body.imageCaption || 'Report image',
+            };
+
+            servicePayload.media = [mediaItem, ...(servicePayload.media || [])];
+
+            logger.info(
+              `Successfully uploaded Report image: ${uploadResponse.url}`,
+            );
+          } catch (error) {
+            console.error('Error uploading disaster report image:', error);
+            throw new Error('Failed to upload profile image');
+          }
+        }
+
         logger.info(
           `Creating disaster report: ${JSON.stringify(servicePayload)}`,
         );

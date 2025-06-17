@@ -3,6 +3,7 @@ import * as resourceService from '@/services/resources/resources';
 import { uploadToSupabase } from '@/services/resources/upload';
 import {
   AuthenticationError,
+  BadRequestError,
   NotFoundError,
   ValidationError,
 } from '@/utils/errors';
@@ -95,6 +96,14 @@ export async function CreateResource(
       throw new AuthenticationError('User is not verified');
     }
 
+    if (typeof req.body?.parameters === 'string') {
+      try {
+        req.body.parameters = JSON.parse(req.body.parameters);
+      } catch (e) {
+        return next(new BadRequestError('Invalid parameters JSON'));
+      }
+    }
+
     const validatedRequestBody = CreateResourceRequestSchema.parse(req.body);
     const { resourceType, name } = validatedRequestBody;
 
@@ -177,6 +186,14 @@ export async function UpdateResource(
       if(!resourceId){
         throw new NotFoundError('Resource ID is required');
       }
+
+       if (typeof req.body.parameters === 'string') {
+            try {
+              req.body.parameters = JSON.parse(req.body.parameters);
+            } catch (e) {
+              return next(new BadRequestError('Invalid parameters JSON'));
+            }
+          }
 
       const validatedRequestBody = UpdateResourceSchema.parse(req.body);
       const { resourceType, name, parameters } = validatedRequestBody;
