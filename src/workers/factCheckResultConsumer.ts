@@ -174,9 +174,9 @@ async function connectAndConsumeResults(attempt = 1): Promise<void> {
               'goService.lastCheckedAt': resultPayload.checkedAt
                 ? new Date(resultPayload.checkedAt)
                 : new Date(),
-              'goService.serviceProvider': resultPayload.serviceProvider,
-              'goService.processingError': resultPayload.processingError,
-              overallPercentage: resultPayload.overallConfidence,
+              // 'goService.serviceProvider': resultPayload.serviceProvider,
+              // 'goService.processingError': resultPayload.processingError,
+              // overallPercentage: resultPayload.overallConfidence,
               lastCalculatedAt: new Date(resultPayload.checkedAt),
               // Keep existing communityScore, don't overwrite it unless Go service aggregates it
               // "communityScore": { upvotes: existingUpvotes, downvotes: existingDownvotes }
