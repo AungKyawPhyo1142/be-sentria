@@ -1,5 +1,6 @@
 import { ENV } from '@/env';
 import logger from '@/logger';
+import { removeUserLocation, updateUserLocation } from '@/services/redis/locationService';
 import { Server as HTTPServer } from 'http';
 import { Socket, Server as SocketIOServer } from 'socket.io';
 
@@ -22,6 +23,7 @@ interface ClientToServerEvents {
     reportId: string,
     ack?: (status: string) => void,
   ) => void;
+  update_location: (location: { lat: number; lng: number }) => void // for user location
 }
 
 interface InterServerEvents {
@@ -55,6 +57,15 @@ export function initSocketIOServer(httpServer: HTTPServer): SocketIOServer {
   io.on('connection', (socket: Socket) => {
     logger.info(`[SocketIO] Socket connected: ${socket.id}`);
     socket.emit('connection_ack', { message: 'Connected to SocketIO server' });
+
+    socket.on('update_location', (location: { lat: number, lng: number }) => {
+      if (location && typeof location.lat === 'number' && typeof location.lng === 'number') {
+        logger.info(`[SocketIO] Recieved location update from socketID: ${socket.id}: `, location)
+        updateUserLocation(socket.id, location.lng, location.lat)
+      } else {
+        logger.warn(`[SocketIO] Recieved invalid location payload from socketID ${socket.id}: `, location)
+      }
+    })
 
     socket.on(
       'subscribe_to_report',
@@ -92,6 +103,7 @@ export function initSocketIOServer(httpServer: HTTPServer): SocketIOServer {
       logger.info(
         `[SocketIO] Socket disconnected: ${socket.id}. Reason: ${reason}`,
       );
+      removeUserLocation(socket.id)
     });
 
     socket.on('error', (error) => {

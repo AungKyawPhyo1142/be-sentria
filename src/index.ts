@@ -23,6 +23,7 @@ import {
   startFactCheckResultConsumer,
   stopFactCheckResultConsumer,
 } from './workers/factCheckResultConsumer';
+import { initRedisConnection } from './libs/redisClient';
 
 async function startServer() {
   try {
@@ -32,6 +33,14 @@ async function startServer() {
     } else {
       logger.error('MONGO_URI is not defined');
       throw new Error('MONGO_URI is not defined');
+    }
+
+    // connect to redis
+    if (ENV.REDIS_URL) {
+      await initRedisConnection()
+    } else {
+      logger.error('REDIS_URL is not defined');
+      throw new Error('REDIS_URL is not defined');
     }
 
     // connect to rabbitmq
@@ -95,10 +104,9 @@ async function startServer() {
 
     httpServer.listen(ENV.PORT, () => {
       logger.verbose(
-        `ENV is pointing to ${
-          ENV.NODE_ENV !== 'production'
-            ? JSON.stringify(ENV, undefined, 2)
-            : ENV.NODE_ENV
+        `ENV is pointing to ${ENV.NODE_ENV !== 'production'
+          ? JSON.stringify(ENV, undefined, 2)
+          : ENV.NODE_ENV
         }`,
       );
       expressListRoutes(gateway, { logger: false }).forEach((route) => {
