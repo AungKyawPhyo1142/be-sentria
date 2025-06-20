@@ -24,6 +24,7 @@ import {
   stopFactCheckResultConsumer,
 } from './workers/factCheckResultConsumer';
 import { initRedisConnection } from './libs/redisClient';
+import { startDiasterNotificationConsumer } from './workers/disasterNotificationConsumer';
 
 async function startServer() {
   try {
@@ -62,6 +63,14 @@ async function startServer() {
           );
         },
       );
+
+      // start diaster notification consumer
+      await startDiasterNotificationConsumer().catch(
+        (startDiasterNotificationError) => {
+          logger.error(`Failed to start DiasterNotificationConsumer`, startDiasterNotificationError);
+          throw new InternalServerError('Failed to start Diaster Notification Consumer')
+        }
+      )
     } else {
       logger.error('RABBITMQ_URL is not defined');
       throw new InternalServerError('RABBITMQ_URL is not defined');

@@ -3,6 +3,7 @@ import { ENV } from '@/env';
 import { publishToQueue } from '@/libs/rabbitmqClient';
 import { emitFactCheckUpdateToRoom } from '@/libs/socketManager';
 import logger from '@/logger';
+import { triggerTestNotificationForLocation } from '@/services/debug/notificationDebugService';
 import { InternalServerError, ValidationError } from '@/utils/errors';
 import * as exampleService from '@services/example';
 import { NextFunction, Request, Response } from 'express';
@@ -159,6 +160,20 @@ const patchNumber = (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
+const triggerQuakeAlert = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Data for the simulated earthquake will come from Postman body
+    const { lat, lon, mag, place } = req.body;
+    if (lat === undefined || lon === undefined || mag === undefined || place === undefined) {
+      return res.status(400).json({ error: "Missing required fields: lat, lon, mag, place" });
+    }
+    const result = await triggerTestNotificationForLocation(lat, lon, mag, place);
+    return res.status(200).json(result);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export {
   getRandom,
   sumQuery,
@@ -167,4 +182,5 @@ export {
   patchNumber,
   sendTestRabbitMQMessage,
   testWebSocketMessage,
+  triggerQuakeAlert
 };

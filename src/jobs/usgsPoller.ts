@@ -44,7 +44,7 @@ async function checkForNewEarthquakes() {
             const [lon, lat] = earthquake.geometry.coordinates;
             const magnitude = props.mag
 
-            logger.info(`[USGSPoller] Processing new event: M${magnitude} - ${props.place}`)
+            logger.info(`[USGSPoller] Processing new event: M${magnitude} - ${props.place} - ${lon}/${lat}`)
 
             // find nearby user using Redis GEORADIUS
             // GEORADIUS returns an array of memebers (in our case socketIDs) within the radius
@@ -76,6 +76,11 @@ async function checkForNewEarthquakes() {
                             time: new Date(props.time).toISOString()
                         }
                     }
+
+
+                    const payloadAsString = JSON.stringify(notificationJobPayload);
+                    logger.info(`[USGSPoller] Publishing STRING payload to RabbitMQ: ${payloadAsString}`);
+
 
                     await publishToQueue(ENV.RABBITMQ_NOTIFICATION_QUEUE_NAME, notificationJobPayload)
                 }
