@@ -1,6 +1,6 @@
 import logger from '@/logger';
 import * as resourceService from '@/services/resources/resources';
-import { uploadToSupabase } from '@/services/resources/upload';
+import { uploadToSupabase, deleteFromSupabase } from '@/services/resources/upload';
 import {
   AuthenticationError,
   BadRequestError,
@@ -307,7 +307,16 @@ export async function DeleteResource(
     if(!resourceId){
       throw new NotFoundError('Resource ID is required');
     }
-    
+
+    const resource = await resourceService.getResourceById(resourceId);
+    if(!resource){
+      throw new NotFoundError('Resource not found');
+    }
+
+    if(resource.imageFilename){
+      await deleteFromSupabase(resource.imageFilename);
+      logger.info(`Deleted resource image: ${resource.imageFilename}`);
+    }
     const result = await resourceService.deleteResource(resourceId, user);
     return res.status(200).json(result);
   }catch(error){
