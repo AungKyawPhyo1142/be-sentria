@@ -182,4 +182,76 @@ export async function DeleteDisasterReport(
     return next(error);
   }
 }
-  
+
+export async function UpdateDisasterReport(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+){
+  try{
+    const user = req.user;
+    if(!user){
+      throw new AuthenticationError('User not authenticated');
+    }
+    
+    const mongoReportId = req.params.id;
+    if(!mongoReportId){
+      throw new NotFoundError('Report MongoDB ID is required');
+    }
+
+    const validationResult = CreateReportRequestSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      throw new ValidationError(validationResult.error.issues);
+    }
+    
+    const { name: reportName, parameters } = validationResult.data;
+    
+    // Handle file upload if present
+    let mediaItems = [];
+    if (req.file) {
+      try {
+        const uploadResult = await uploadToSupabase(req.file, user.id);
+        if (uploadResult.url) {
+          mediaItems.push({
+            type: 'IMAGE' as const,
+            url: uploadResult.url,
+            caption: req.body.caption || ''
+          });
+        }
+      } catch (uploadError) {
+        logger.error(`Error uploading file: ${uploadError}`);
+        throw new BadRequestError('Failed to upload file');
+      }
+    }
+    
+    const payload = {
+      reportName: reportName,
+      description: parameters.description,
+      incidentType: parameters.incidentType,
+      severity: parameters.severity,
+      incidentTimestamp: parameters.incidentTimestamp,
+      location: {
+        type: "Point" as const,
+        coordinates: [parameters.location.longitude, parameters.location.latitude] as [number, number]
+      },
+      country: parameters.location.country,
+      city: parameters.location.city,
+      media: mediaItems
+    };
+    
+    const result = await disasterReportService.updateDisasterReport(
+      mongoReportId,
+      payload,
+      reportName,
+      user
+    );
+    
+    return res.status(200).json({result});
+  } catch(error) {
+    if (error instanceof z.ZodError) {
+      return next(new ValidationError(error.issues));
+    }
+    logger.error(`Error updating disaster report: ${error}`);
+    return next(error);
+  }
+}

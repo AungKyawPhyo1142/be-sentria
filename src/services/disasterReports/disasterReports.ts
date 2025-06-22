@@ -358,3 +358,112 @@ export async function deleteDisasterReport(reportId: string, user: User){
     throw error;
   }
 }
+
+export async function updateDisasterReport(
+  mongoReportId: string,
+  payload: ValidatedDisasterPayload,
+  pgReportName: string,
+  user: User
+) {
+  try {
+    logger.info(`Updating disaster report with MongoDB ID ${mongoReportId} for user: ${user.id}`);
+    const requestingUserId = user.id;
+
+    const db = await getMongoDB();
+    const disasterReportCollection: Collection = db.collection(DISASTER_COLLECTION_NAME);
+
+    const reportDocument = await disasterReportCollection.findOne({
+      _id: new ObjectId(mongoReportId)
+    });
+
+    if (!reportDocument) {
+      logger.warn(`MongoDB disaster report with ID ${mongoReportId} not found`);
+      throw new NotFoundError('Disaster report not found in MongoDB');
+    }
+
+    const postgresReportId = reportDocument.postgresReportId;
+    
+    if (!postgresReportId) {
+      logger.warn(`MongoDB disaster report ${mongoReportId} has no PostgreSQL ID reference`);
+      throw new InternalServerError('Invalid disaster report data: missing PostgreSQL reference');
+    }
+    
+    const existingReport = await prisma.report.findUnique({
+      where: {
+        id: postgresReportId
+      }
+    });
+    
+    if (!existingReport) {
+      logger.warn(`PostgreSQL report with ID ${postgresReportId} not found`);
+      throw new NotFoundError('Disaster report not found in PostgreSQL database');
+    }
+    
+    if (existingReport.generatedById !== requestingUserId) {
+      throw new AuthenticationError('You are not authorized to update this disaster report');
+    }
+
+    logger.info(`Updating PostgreSQL report ${postgresReportId} for user: ${user.id}`);
+    
+    const updatedReport = await prisma.report.update({
+      where: {
+        id: postgresReportId
+      },
+      data: {
+        name: pgReportName,
+        parameters: {
+          description: payload.description,
+          incidentType: payload.incidentType,
+          severity: payload.severity,
+          incidentTimestamp: payload.incidentTimestamp,
+          location: payload.location,
+        },
+        country: payload.country,
+        city: payload.city,
+        updated_at: new Date()
+      }
+    });
+
+    if (!updatedReport) {
+      throw new NotFoundError('Failed to update disaster report in PostgreSQL');
+    }
+
+    const updatedMongoReport = await disasterReportCollection.updateOne(
+      {
+        _id: new ObjectId(mongoReportId)
+      },
+      {
+        $set: {
+          name: pgReportName,
+          description: payload.description,
+          incidentType: payload.incidentType,
+          severity: payload.severity,
+          incidentTimestamp: payload.incidentTimestamp,
+          location: payload.location,
+          country: payload.country,
+          city: payload.city,
+          media: payload.media,
+          systemUpdatedAt: new Date()
+        }
+      }
+    );
+
+    if (updatedMongoReport.matchedCount === 0) {
+      throw new NotFoundError('Disaster report not found in MongoDB');
+    }
+
+    if (updatedMongoReport.modifiedCount === 0) {
+      logger.warn(`Failed to update MongoDB disaster report ${mongoReportId} for user: ${user.id}`);
+    }
+
+    return {
+      mongoReportId,
+      postgresReportId,
+      message: `Disaster report "${pgReportName}" updated successfully`,
+      updatedAt: new Date()
+    };
+  } catch (error) {
+    logger.error(`Error updating disaster report: ${error}`);
+    throw error;
+  }
+}
