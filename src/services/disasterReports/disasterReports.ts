@@ -9,9 +9,9 @@ import {
   DisasterReportJobPayload,
   MongoDBReportSchema,
 } from '@/types/reports';
-import { AppError, InternalServerError } from '@/utils/errors';
+import { AppError, InternalServerError, NotFoundError } from '@/utils/errors';
 import { ReportDBStatus, ReportStatus, ReportType, User } from '@prisma/client';
-import { Collection } from 'mongodb';
+import { Collection, ObjectId } from 'mongodb';
 
 export interface ValidatedDisasterPayload {
   reportName: string;
@@ -242,5 +242,28 @@ export async function getAllDisasterReports(cursor: string, limit: string) {
   } catch (error) {
     logger.error(`Error fetching disaster reports: ${error}`);
     throw new InternalServerError('Error fetching disaster reports');
+  }
+}
+
+export async function getDisasterReportById(reportId: string){
+  try{
+    logger.info(`Getting disaster report by id: ${reportId}`);
+    const db = await getMongoDB();
+    const disasterReportCollection: Collection = db.collection(DISASTER_COLLECTION_NAME);
+    const disasterReport = await disasterReportCollection.findOne({
+      _id: new ObjectId(reportId)
+    })
+    
+    if(!disasterReport){
+      throw new NotFoundError('Disaster report not found');
+    }
+    
+    return {
+      data: disasterReport,
+      message: 'Disaster report fetched successfully'
+    }  
+  }catch(error){
+    logger.error(`Error fetching disaster report by id: ${error}`);
+    throw error;
   }
 }

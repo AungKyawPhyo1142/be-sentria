@@ -5,6 +5,7 @@ import { DisasterIncidentParametersSchema } from '@/types/reports';
 import {
   AuthenticationError,
   BadRequestError,
+  NotFoundError,
   ValidationError,
 } from '@/utils/errors';
 import { ReportType } from '@prisma/client';
@@ -134,6 +135,26 @@ export async function GetAllDiasterReports(
     return res.status(200).json({ reports });
   } catch (error) {
     logger.error(`Error fetching disaster reports: ${error}`);
+    return next(error);
+  }
+}
+
+export async function GetDisasterReportById(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+){
+  try{
+    const reportId = req.params.id;
+
+    if(!reportId){
+      throw new NotFoundError('Report ID is required');
+    }
+
+    const report = await disasterReportService.getDisasterReportById(reportId);    
+    return res.status(200).json({ report });
+  }catch(error){
+    logger.error(`Error fetching disaster report by id: ${error}`);
     return next(error);
   }
 }

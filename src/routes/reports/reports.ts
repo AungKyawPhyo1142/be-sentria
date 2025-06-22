@@ -7,5 +7,6 @@ const router = Router();
 
 router.post('/create', secureRoute(), upload.single('reportImage'), reportController.CreateReport);
 router.get('/', secureRoute(), reportController.GetAllDiasterReports);
+router.get('/:id', secureRoute(), reportController.GetDisasterReportById);
 
 export default router;
