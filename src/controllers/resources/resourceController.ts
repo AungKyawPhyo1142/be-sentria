@@ -1,6 +1,6 @@
 import logger from '@/logger';
 import * as resourceService from '@/services/resources/resources';
-import { uploadToSupabase, deleteFromSupabase } from '@/services/resources/upload';
+import { uploadToSupabase } from '@/services/resources/upload';
 import {
   AuthenticationError,
   BadRequestError,
@@ -303,21 +303,13 @@ export async function DeleteResource(
       throw new AuthenticationError('User not authenticated');
     }
 
-    const resourceId = req.params.id;
-    if(!resourceId){
-      throw new NotFoundError('Resource ID is required');
+    const mongoResourceId = req.params.id;
+    if(!mongoResourceId){
+      throw new NotFoundError('Resource MongoDB ID is required');
     }
 
-    const resource = await resourceService.getResourceById(resourceId);
-    if(!resource){
-      throw new NotFoundError('Resource not found');
-    }
-
-    if(resource.imageFilename){
-      await deleteFromSupabase(resource.imageFilename);
-      logger.info(`Deleted resource image: ${resource.imageFilename}`);
-    }
-    const result = await resourceService.deleteResource(resourceId, user);
+    const result = await resourceService.deleteResource(mongoResourceId, user);
+    
     return res.status(200).json(result);
   }catch(error){
     logger.error(`Error deleting resource: ${error}`);
