@@ -158,3 +158,28 @@ export async function GetDisasterReportById(
     return next(error);
   }
 }
+
+export async function DeleteDisasterReport(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+){
+  try{
+    const user = req.user;
+    if(!user){
+      throw new AuthenticationError('User not authenticated');
+    }
+    const reportId = req.params.id;
+
+    if(!reportId){
+      throw new NotFoundError('Report ID is required');
+    }
+
+    const report = await disasterReportService.deleteDisasterReport(reportId, user);    
+    return res.status(200).json({ report });
+  }catch(error){
+    logger.error(`Error deleting disaster report: ${error}`);
+    return next(error);
+  }
+}
+  
