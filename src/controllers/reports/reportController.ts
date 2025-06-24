@@ -1,9 +1,11 @@
 import logger from '@/logger';
 import * as disasterReportService from '@/services/disasterReports/disasterReports';
+import { uploadToSupabase } from '@/services/disasterReports/upload';
 import { DisasterIncidentParametersSchema } from '@/types/reports';
 import {
   AuthenticationError,
   BadRequestError,
+  NotFoundError,
   ValidationError,
 } from '@/utils/errors';
 import { ReportType } from '@prisma/client';
@@ -36,6 +38,14 @@ export async function CreateReport(
 
     logger.info(`got a request to create report for user: ${user.username}`);
 
+    if (typeof req.body?.parameters === 'string') {
+      try {
+        req.body.parameters = JSON.parse(req.body.parameters);
+      } catch (e) {
+        return next(new BadRequestError('Invalid parameters JSON'));
+      }
+    }
+
     const validatedRequestBody = CreateReportRequestSchema.parse(req.body);
     const { reportType, name } = validatedRequestBody;
 
@@ -65,6 +75,29 @@ export async function CreateReport(
           city: disasterParams.location.city,
           media: disasterParams.media || [],
         };
+
+        if (req.file) {
+          try {
+            logger.info(`Uploading report image for user: ${user.id}`);
+            const uploadResponse = await uploadToSupabase(req.file, user.id);
+
+            const mediaItem = {
+              type: 'IMAGE' as const,
+              url: uploadResponse.url,
+              caption: req.body.imageCaption || 'Report image',
+            };
+
+            servicePayload.media = [mediaItem, ...(servicePayload.media || [])];
+
+            logger.info(
+              `Successfully uploaded Report image: ${uploadResponse.url}`,
+            );
+          } catch (error) {
+            console.error('Error uploading disaster report image:', error);
+            throw new Error('Failed to upload profile image');
+          }
+        }
+
         logger.info(
           `Creating disaster report: ${JSON.stringify(servicePayload)}`,
         );
@@ -102,6 +135,123 @@ export async function GetAllDiasterReports(
     return res.status(200).json({ reports });
   } catch (error) {
     logger.error(`Error fetching disaster reports: ${error}`);
+    return next(error);
+  }
+}
+
+export async function GetDisasterReportById(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+){
+  try{
+    const reportId = req.params.id;
+
+    if(!reportId){
+      throw new NotFoundError('Report ID is required');
+    }
+
+    const report = await disasterReportService.getDisasterReportById(reportId);    
+    return res.status(200).json({ report });
+  }catch(error){
+    logger.error(`Error fetching disaster report by id: ${error}`);
+    return next(error);
+  }
+}
+
+export async function DeleteDisasterReport(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+){
+  try{
+    const user = req.user;
+    if(!user){
+      throw new AuthenticationError('User not authenticated');
+    }
+    const reportId = req.params.id;
+
+    if(!reportId){
+      throw new NotFoundError('Report ID is required');
+    }
+
+    const report = await disasterReportService.deleteDisasterReport(reportId, user);    
+    return res.status(200).json({ report });
+  }catch(error){
+    logger.error(`Error deleting disaster report: ${error}`);
+    return next(error);
+  }
+}
+
+export async function UpdateDisasterReport(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+){
+  try{
+    const user = req.user;
+    if(!user){
+      throw new AuthenticationError('User not authenticated');
+    }
+    
+    const mongoReportId = req.params.id;
+    if(!mongoReportId){
+      throw new NotFoundError('Report MongoDB ID is required');
+    }
+
+    const validationResult = CreateReportRequestSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      throw new ValidationError(validationResult.error.issues);
+    }
+    
+    const { name: reportName, parameters } = validationResult.data;
+    
+    // Handle file upload if present
+    let mediaItems = [];
+    if (req.file) {
+      try {
+        const uploadResult = await uploadToSupabase(req.file, user.id);
+        if (uploadResult.url) {
+          mediaItems.push({
+            type: 'IMAGE' as const,
+            url: uploadResult.url,
+            caption: req.body.caption || ''
+          });
+        }
+      } catch (uploadError) {
+        logger.error(`Error uploading file: ${uploadError}`);
+        throw new BadRequestError('Failed to upload file');
+      }
+    }
+    
+    const payload = {
+      reportName: reportName,
+      description: parameters.description,
+      incidentType: parameters.incidentType,
+      severity: parameters.severity,
+      incidentTimestamp: parameters.incidentTimestamp,
+      location: {
+        type: "Point" as const,
+        coordinates: [parameters.location.longitude, parameters.location.latitude] as [number, number]
+      },
+      country: parameters.location.country,
+      city: parameters.location.city,
+      media: mediaItems
+    };
+    
+    const result = await disasterReportService.updateDisasterReport(
+      mongoReportId,
+      payload,
+      reportName,
+      user
+    );
+    
+    return res.status(200).json({result});
+  } catch(error) {
+    if (error instanceof z.ZodError) {
+      return next(new ValidationError(error.issues));
+    }
+    logger.error(`Error updating disaster report: ${error}`);
     return next(error);
   }
 }

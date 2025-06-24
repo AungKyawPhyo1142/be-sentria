@@ -9,14 +9,16 @@ export interface UploadResponse {
   mimetype: string;
 }
 
-const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!);
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_KEY!,
+);
 
 export const uploadToSupabase = async (
   file: Express.Multer.File,
   userId: number,
 ) => {
   try {
-    //optimize image
     const optimizedBuffer = await sharp(file.buffer)
       .resize(800, 800, {
         fit: 'inside',
@@ -26,25 +28,22 @@ export const uploadToSupabase = async (
       .toBuffer();
 
     const fileExtension = 'jpg';
-    const filename = `profile-${userId}-${uuidv4()}.${fileExtension}`;
-    const filePath = `profile-images/${filename}`;
+    const filename = `disaster-report-${userId}-${uuidv4()}.${fileExtension}`;
+    const filePath = `disaster-report-images/${filename}`;
 
     const { error } = await supabase.storage
-      .from(`users`)
+      .from(`reports`)
       .upload(filePath, optimizedBuffer, {
         contentType: 'image/jpeg',
         upsert: false,
       });
-    
-      // console.log(data);
 
     if (error) {
       throw new Error(`Upload failed: ${error.message}`);
     }
 
-    // get public URL
     const { data: urlData } = supabase.storage
-      .from('users')
+      .from('reports')
       .getPublicUrl(filePath);
 
     return {
@@ -56,18 +55,19 @@ export const uploadToSupabase = async (
   }
 };
 
-export const deleteFromSupabase = async (filename: string): Promise<void> => {
-  try {
-    const filePath = `profile-images/${filename}`; // folder inside bucket
-    
-    const { error } = await supabase.storage
-      .from('users') // bucket name
-      .remove([filePath]);
 
-    if (error) {
+export const deleteFromSupabase = async (filename: string): Promise<void> => {
+    try {
+      const filePath = `disaster-report-images/${filename}`; // folder inside bucket
+      
+      const { error } = await supabase.storage
+        .from('reports') // bucket name
+        .remove([filePath]);
+  
+      if (error) {
+        console.error('Failed to delete old profile image:', error);
+      }
+    } catch (error) {
       console.error('Failed to delete old profile image:', error);
     }
-  } catch (error) {
-    console.error('Failed to delete old profile image:', error);
-  }
-};
+  };
