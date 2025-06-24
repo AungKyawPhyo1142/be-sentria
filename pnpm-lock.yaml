@@ -117,9 +117,6 @@ importers:
       '@types/morgan':
         specifier: ^1.9.9
         version: 1.9.9
-      '@types/multer':
-        specifier: ^1.4.12
-        version: 1.4.12
       '@types/node':
         specifier: ^22.0.0
         version: 22.15.3
