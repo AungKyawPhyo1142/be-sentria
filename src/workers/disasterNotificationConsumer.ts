@@ -1,12 +1,12 @@
 import { ENV } from "@/env"
-import { getIOInstance } from "@/libs/socketManager"
+import { emitDisasterNotificationToRoom } from "@/libs/socketManager"
 import logger from "@/logger"
 import { InternalServerError } from "@/utils/errors"
 import amqp, { ChannelModel, Channel, ConsumeMessage } from "amqplib"
 import { error } from "console"
 
 
-interface DisasterNotificationJobPayload {
+export interface DisasterNotificationJobPayload {
     socketId: string,
     eventName: string,
     data: {
@@ -134,9 +134,10 @@ async function connectAndConsumeNotifications(attempt = 1): Promise<void> {
                             disasterNotificationConsumerChannel?.nack(msg, false, false)
                             return
                         }
-                        const socket = getIOInstance()
-                        // emit it to the specific socketID
-                        socket?.to(notiPlayload.socketId).emit("earthquake_alert", notiPlayload)
+                        emitDisasterNotificationToRoom(notiPlayload.socketId, notiPlayload)
+                        // const socket = getIOInstance()
+                        // // emit it to the specific socketID
+                        // socket?.to(notiPlayload.socketId).emit("earthquake_alert", notiPlayload)
                         disasterNotificationConsumerChannel?.ack(msg)
                         logger.info(
                             `[DisasterNotificationConsumer] Notification for socketID: ${notiPlayload.socketId} is emitted and Acked`

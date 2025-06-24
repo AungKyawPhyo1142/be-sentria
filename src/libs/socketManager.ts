@@ -1,6 +1,7 @@
 import { ENV } from '@/env';
 import logger from '@/logger';
 import { removeUserLocation, updateUserLocation } from '@/services/redis/locationService';
+import { DisasterNotificationJobPayload } from '@/workers/disasterNotificationConsumer';
 import { Server as HTTPServer } from 'http';
 import { Socket, Server as SocketIOServer } from 'socket.io';
 
@@ -137,6 +138,26 @@ export function emitFactCheckUpdateToRoom(
   logger.info(
     `[SocketIO] Emitted factCheck update to room ${reportId}. Payload: ${JSON.stringify(
       eventPayload,
+    )}`,
+  );
+}
+
+export function emitDisasterNotificationToRoom(
+  socketID: string,
+  notificationData: DisasterNotificationJobPayload
+) {
+  if (!io) {
+    logger.warn('[SocketIO] SocketIO server not initialized');
+    return;
+  }
+  const notificationPayload = {
+    socketId: socketID,
+    notificationData: notificationData
+  }
+  io.to(socketID).emit("earthquake_alert", notificationPayload)
+  logger.info(
+    `[SocketIO] Emitted factCheck update to room ${socketID}. Payload: ${JSON.stringify(
+      notificationPayload,
     )}`,
   );
 }
