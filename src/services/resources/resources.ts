@@ -279,56 +279,68 @@ export async function getResourceById(resourceId: string){
 }
 
 export async function deleteResource(resourceId: string, user: User){
-  logger.info(`Deleting resource ${resourceId} for user: ${user.id}`);
+  logger.info(`Deleting resource with MongoDB ID ${resourceId} for user: ${user.id}`);
   const requestingUserId = user.id;
   
   try {
+    const db = await getMongoDB();
+    const resourceCollection: Collection = db.collection(RESOURCE_COLLECTION_NAME);
+    
+    const resourceDocument = await resourceCollection.findOne({
+      _id: new ObjectId(resourceId)
+    });
+    
+    if (!resourceDocument) {
+      logger.warn(`MongoDB resource with ID ${resourceId} not found`);
+      throw new NotFoundError('Resource not found in MongoDB');
+    }
+    
+    // PostgreSQL resource ID from the MongoDB 
+    const postgresResourceId = resourceDocument.postgresResourceId;
+    
+    if (!postgresResourceId) {
+      logger.warn(`MongoDB resource ${resourceId} has no PostgreSQL ID reference`);
+      throw new InternalServerError('Invalid resource data: missing PostgreSQL reference');
+    }
+    
     const existingResource = await prisma.resource.findUnique({
       where: {
-        id: resourceId
+        id: postgresResourceId
       }
     });
     
     if (!existingResource) {
-      throw new NotFoundError('Resource not found in PG');
+      logger.warn(`PostgreSQL resource with ID ${postgresResourceId} not found`);
+      throw new NotFoundError('Resource not found in PostgreSQL database');
     }
     
     if (existingResource.generatedById !== requestingUserId) {
       throw new AuthenticationError('You are not authorized to delete this resource');
     }
     
-    const db = await getMongoDB();
-    const resourceCollection: Collection = db.collection(RESOURCE_COLLECTION_NAME);
-    
-    const resourceDocument = await resourceCollection.findOne({
-      postgresResourceId: resourceId
-    });
-    
-    if (!resourceDocument) {
-      logger.warn(`MongoDB resource with PostgreSQL ID ${resourceId} not found`);
-      throw new NotFoundError('Resource not found in mongoDB');
-    }
-    
     const mediaItems = resourceDocument.media || [];
     const imageFilenames = [];
-        
+    
+    // delete from MongoDB 
     const mongoDeleteResult = await resourceCollection.deleteOne({
-      postgresResourceId: resourceId
+      _id: new ObjectId(resourceId)
     });
     
     if (mongoDeleteResult.deletedCount === 0) {
-      logger.warn(`Failed to delete MongoDB resource with PostgreSQL ID ${resourceId}`);
+      logger.warn(`Failed to delete MongoDB resource with ID ${resourceId}`);
+      throw new InternalServerError('Failed to delete resource from MongoDB');
     } else {
-      logger.info(`MongoDB resource with PostgreSQL ID ${resourceId} deleted successfully`);
+      logger.info(`MongoDB resource with ID ${resourceId} deleted successfully`);
     }
     
+    // delete from PostgreSQL
     await prisma.resource.delete({
       where: {
-        id: resourceId
+        id: postgresResourceId
       }
     });
     
-    logger.info(`PostgreSQL resource ${resourceId} deleted successfully`);
+    logger.info(`PostgreSQL resource ${postgresResourceId} deleted successfully`);
     
     for (const mediaItem of mediaItems) {
       if (mediaItem.type === 'IMAGE' && mediaItem.url) {
@@ -348,10 +360,10 @@ export async function deleteResource(resourceId: string, user: User){
     }
     
     return {
-      resourceId,
+      mongoDbResourceId: resourceId,
+      postgresResourceId: postgresResourceId,
       message: `Resource "${existingResource.name}" deleted successfully`,
       deletedAt: new Date(),
-      deletedImages: imageFilenames.length > 0 ? imageFilenames : undefined
     };
   } catch (error) {
     logger.error(`Error deleting resource: ${error}`);
