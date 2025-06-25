@@ -213,64 +213,165 @@ export async function createDisasterReport(
   }
 }
 
+
 export async function getAllDisasterReports(cursor: string, limit: string) {
   const take = parseInt(limit as string, 10) || 10;
+
   try {
-    const reports = await prisma.report.findMany({
-      take: take + 1,
-      ...(cursor && {
-        skip: 1, // skip the cursor item
-        cursor: {
-          id: cursor,
-        },
-      }),
-      orderBy: {
-        created_at: 'desc',
-      },
+    const db = await getMongoDB()
+    const disasterReportCollection: Collection = db.collection(DISASTER_COLLECTION_NAME);
+    const query = {}
+    if (cursor) {
+      //@ts-ignore
+      query['_id'] = { $gt: new ObjectId(cursor) };
+    }
+
+    const disasterReports = await disasterReportCollection.find(query)
+      .sort({ _id: -1 }) // sort by _id in descending order
+      .limit(take + 1) // fetch one extra to check for next page
+      .toArray();
+    const hasNextPage = disasterReports.length > take;
+    const paginatedReports = hasNextPage ? disasterReports.slice(0, take) : disasterReports;
+    const nextCursor = hasNextPage ? disasterReports[take]._id.toHexString() : null;
+
+    if (paginatedReports.length === 0) {
+      return {
+        data: [],
+        nextCursor: null,
+        hasNextPage: false,
+      };
+    }
+
+    const UserIds = [...new Set(paginatedReports.map(report => report.reporterUserId).filter(id => id != null))];
+
+    const users = await prisma.user.findMany({
       where: {
-        reportType: ReportType.DISASTER_INCIDENT,
+        id: {
+          in: UserIds,
+        },
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        profile_image: true,
       },
     });
 
-    const hasNextPage = reports.length > take;
-    const paginatedReports = hasNextPage ? reports.slice(0, take) : reports;
+    const userMap = new Map(users.map(user => [user.id, user]));
+
+    const formattedReports = paginatedReports.map(report => {
+      const user = userMap.get(report.reporterUserId);
+      return {
+        ...report,
+        generatedBy: user || {
+          id: null,
+          firstName: 'Unknown',
+          lastName: '',
+          profile_image: null,
+        },
+      };
+    });
 
     return {
-      data: paginatedReports,
-      nextCursor: hasNextPage ? reports[take].id : null,
+      data: formattedReports,
+      nextCursor,
       hasNextPage,
     };
+
+    // const reports = await prisma.report.findMany({
+    //   take: take + 1,
+    //   ...(cursor && {
+    //     skip: 1, // skip the cursor item
+    //     cursor: {
+    //       id: cursor,
+    //     },
+    //   }),
+    //   orderBy: {
+    //     created_at: 'desc',
+    //   },
+    //   include: {
+    //     generatedBy: {
+    //       select: {
+    //         id: true,
+    //         firstName: true,
+    //         lastName: true,
+    //         profile_image: true,
+    //       },
+    //     },
+    //   },
+    //   where: {
+    //     reportType: ReportType.DISASTER_INCIDENT,
+    //   },
+    // });
+
+    // const hasNextPage = reports.length > take;
+    // const paginatedReports = hasNextPage ? reports.slice(0, take) : reports;
+
+    // return {
+    //   data: paginatedReports,
+    //   nextCursor: hasNextPage ? reports[take].id : null,
+    //   hasNextPage,
+    // };
   } catch (error) {
     logger.error(`Error fetching disaster reports: ${error}`);
     throw new InternalServerError('Error fetching disaster reports');
   }
 }
 
-export async function getDisasterReportById(reportId: string){
-  try{
+export async function getDisasterReportById(reportId: string) {
+  try {
     logger.info(`Getting disaster report by id: ${reportId}`);
     const db = await getMongoDB();
     const disasterReportCollection: Collection = db.collection(DISASTER_COLLECTION_NAME);
     const disasterReport = await disasterReportCollection.findOne({
       _id: new ObjectId(reportId)
     })
-    
-    if(!disasterReport){
+
+    if (!disasterReport) {
       throw new NotFoundError('Disaster report not found');
     }
-    
+
+    const userId = disasterReport.reporterUserId;
+    if (!userId) {
+      logger.warn(`Disaster report ${reportId} has no reporter user ID`);
+      throw new InternalServerError('Invalid disaster report data: missing reporter user ID');
+    }
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        profile_image: true
+      }
+    });
+
+    const formattedReport = {
+      ...disasterReport,
+      generatedBy: user || {
+        id: null,
+        firstName: 'Unknown',
+        lastName: '',
+        profile_image: null,
+      },
+    };
+
     return {
-      data: disasterReport,
+      data: formattedReport,
       message: 'Disaster report fetched successfully'
-    }  
-  }catch(error){
+    }
+  } catch (error) {
     logger.error(`Error fetching disaster report by id: ${error}`);
     throw error;
   }
 }
 
-export async function deleteDisasterReport(reportId: string, user: User){
-  try{
+export async function deleteDisasterReport(reportId: string, user: User) {
+  try {
     logger.info(`Deleting disaster report with MongoDB ID ${reportId} for user: ${user.id}`);
     const requestingUserId = user.id;
 
@@ -287,55 +388,55 @@ export async function deleteDisasterReport(reportId: string, user: User){
     }
 
     const postgresReportId = reportDocument.postgresReportId;
-    
+
     if (!postgresReportId) {
       logger.warn(`MongoDB disaster report ${reportId} has no PostgreSQL ID reference`);
       throw new InternalServerError('Invalid disaster report data: missing PostgreSQL reference');
     }
-    
+
     const existingReport = await prisma.report.findUnique({
       where: {
         id: postgresReportId
       }
     });
-    
+
     if (!existingReport) {
       logger.warn(`PostgreSQL report with ID ${postgresReportId} not found`);
       throw new NotFoundError('Disaster report not found in PostgreSQL database');
     }
-    
+
     if (existingReport.generatedById !== requestingUserId) {
       throw new AuthenticationError('You are not authorized to delete this disaster report');
     }
-    
+
     const mediaItems = reportDocument.media || [];
     const imageFilenames = [];
-    
+
     const mongoDeleteResult = await disasterReportCollection.deleteOne({
       _id: new ObjectId(reportId)
     });
-    
+
     if (mongoDeleteResult.deletedCount === 0) {
       logger.warn(`Failed to delete MongoDB disaster report with ID ${reportId}`);
       throw new InternalServerError('Failed to delete disaster report from MongoDB');
     } else {
       logger.info(`MongoDB disaster report with ID ${reportId} deleted successfully`);
     }
-    
+
     await prisma.report.delete({
       where: {
         id: postgresReportId
       }
     });
-    
+
     logger.info(`PostgreSQL report ${postgresReportId} deleted successfully`);
-    
+
     for (const mediaItem of mediaItems) {
       if (mediaItem.type === 'IMAGE' && mediaItem.url) {
         try {
           const urlParts = mediaItem.url.split('/');
           const filename = urlParts[urlParts.length - 1];
-          
+
           if (filename) {
             logger.info(`Deleting image ${filename} from storage`);
             await deleteFromSupabase(filename);
@@ -346,14 +447,14 @@ export async function deleteDisasterReport(reportId: string, user: User){
         }
       }
     }
-    
+
     return {
       mongoResourceId: reportId,
       postgresResourceId: postgresReportId,
       message: `Disaster report "${existingReport?.name}" deleted successfully`,
       deletedAt: new Date(),
     };
-  } catch(error) {
+  } catch (error) {
     logger.error(`Error deleting disaster report by id: ${error}`);
     throw error;
   }
@@ -382,29 +483,29 @@ export async function updateDisasterReport(
     }
 
     const postgresReportId = reportDocument.postgresReportId;
-    
+
     if (!postgresReportId) {
       logger.warn(`MongoDB disaster report ${mongoReportId} has no PostgreSQL ID reference`);
       throw new InternalServerError('Invalid disaster report data: missing PostgreSQL reference');
     }
-    
+
     const existingReport = await prisma.report.findUnique({
       where: {
         id: postgresReportId
       }
     });
-    
+
     if (!existingReport) {
       logger.warn(`PostgreSQL report with ID ${postgresReportId} not found`);
       throw new NotFoundError('Disaster report not found in PostgreSQL database');
     }
-    
+
     if (existingReport.generatedById !== requestingUserId) {
       throw new AuthenticationError('You are not authorized to update this disaster report');
     }
 
     logger.info(`Updating PostgreSQL report ${postgresReportId} for user: ${user.id}`);
-    
+
     const updatedReport = await prisma.report.update({
       where: {
         id: postgresReportId
