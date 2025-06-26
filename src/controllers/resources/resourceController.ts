@@ -148,10 +148,8 @@ export async function CreateResource(
           };
         });
         
-        // Wait for all uploads to complete
         const mediaItems = await Promise.all(uploadPromises);
         
-        // Add new media items to the existing media array
         servicePayload.media = [...mediaItems, ...(servicePayload.media || [])];
         
         logger.info(`Successfully uploaded ${mediaItems.length} resource images`);
@@ -232,7 +230,6 @@ export async function UpdateResource(
         try {
           logger.info(`Uploading ${req.files.length} resource images for user: ${user.id}`);
           
-          // Process each uploaded file
           const uploadPromises = req.files.map(async (file, index) => {
             const uploadResponse = await uploadToSupabase(file, user.id);
             
