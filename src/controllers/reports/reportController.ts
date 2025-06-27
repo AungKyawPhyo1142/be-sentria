@@ -76,22 +76,27 @@ export async function CreateReport(
           media: disasterParams.media || [],
         };
 
-        if (req.file) {
+        if (req?.files && Array.isArray(req.files) && req.files.length > 0) {
           try {
             logger.info(`Uploading report image for user: ${user.id}`);
-            const uploadResponse = await uploadToSupabase(req.file, user.id);
+            const uploadPromises = req?.files?.map(async (file, index) => {
+              const uploadResponse = await uploadToSupabase(file, user.id);
+              return {
+                type: 'IMAGE' as 'IMAGE' | 'VIDEO',
+                url: uploadResponse.url,
+                caption: Array.isArray(req.body.imageCaptions) && req.body.imageCaptions[index] 
+                ? req.body.imageCaptions[index] 
+                : `Report image ${index + 1}`
+              };
+            });
 
-            const mediaItem = {
-              type: 'IMAGE' as const,
-              url: uploadResponse.url,
-              caption: req.body.imageCaption || 'Report image',
-            };
-
-            servicePayload.media = [mediaItem, ...(servicePayload.media || [])];
+            const mediaItems = await Promise.all(uploadPromises);
+            servicePayload.media = [...mediaItems, ...(servicePayload.media || [])];
 
             logger.info(
-              `Successfully uploaded Report image: ${uploadResponse.url}`,
+              `Successfully uploaded ${mediaItems.length} Report images`,
             );
+
           } catch (error) {
             console.error('Error uploading disaster report image:', error);
             throw new Error('Failed to upload profile image');
@@ -206,18 +211,20 @@ export async function UpdateDisasterReport(
     
     const { name: reportName, parameters } = validationResult.data;
     
-    // Handle file upload if present
-    let mediaItems = [];
-    if (req.file) {
+    let mediaItems: Array<{type: 'IMAGE' | 'VIDEO', url: string, caption?: string}> = [];
+    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
       try {
-        const uploadResult = await uploadToSupabase(req.file, user.id);
-        if (uploadResult.url) {
-          mediaItems.push({
-            type: 'IMAGE' as const,
+        const uploadPromises = req.files.map(async (file, index) => {
+          const uploadResult = await uploadToSupabase(file, user.id);
+          return {
+            type: 'IMAGE' as 'IMAGE' | 'VIDEO',
             url: uploadResult.url,
-            caption: req.body.caption || ''
-          });
-        }
+            caption: Array.isArray(req.body.imageCaptions) && req.body.imageCaptions[index] 
+              ? req.body.imageCaptions[index] 
+              : `Report image ${index + 1}`
+          };
+        });
+        mediaItems = await Promise.all(uploadPromises);
       } catch (uploadError) {
         logger.error(`Error uploading file: ${uploadError}`);
         throw new BadRequestError('Failed to upload file');
