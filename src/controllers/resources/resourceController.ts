@@ -131,22 +131,30 @@ export async function CreateResource(
       media: resourceParams.media || [],
     };
     
-    if (req.file) {
+    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
       try {
-        logger.info(`Uploading resource image for user: ${user.id}`);
-        const uploadResponse = await uploadToSupabase(req.file, user.id);
+        logger.info(`Uploading ${req.files.length} resource images for user: ${user.id}`);
         
-        const mediaItem = {
-          type: 'IMAGE' as const,
-          url: uploadResponse.url,
-          caption: req.body.imageCaption || 'Resource image'
-        };
+        // Process each uploaded file
+        const uploadPromises = req.files.map(async (file, index) => {
+          const uploadResponse = await uploadToSupabase(file, user.id);
+          
+          return {
+            type: 'IMAGE' as const,
+            url: uploadResponse.url,
+            caption: Array.isArray(req.body.imageCaptions) && req.body.imageCaptions[index] 
+              ? req.body.imageCaptions[index] 
+              : `Resource image ${index + 1}`
+          };
+        });
         
-        servicePayload.media = [mediaItem, ...(servicePayload.media || [])];
+        const mediaItems = await Promise.all(uploadPromises);
         
-        logger.info(`Successfully uploaded resource image: ${uploadResponse.url}`);
+        servicePayload.media = [...mediaItems, ...(servicePayload.media || [])];
+        
+        logger.info(`Successfully uploaded ${mediaItems.length} resource images`);
       } catch (uploadError) {
-        logger.error(`Error uploading resource image: ${uploadError}`);
+        logger.error(`Error uploading resource images: ${uploadError}`);
       }
     }
 
@@ -218,22 +226,29 @@ export async function UpdateResource(
         media: parameters.media || [],
       };
       
-      if (req.file) {
+      if (req.files && Array.isArray(req.files) && req.files.length > 0) {
         try {
-          logger.info(`Uploading resource image for user: ${user.id}`);
-          const uploadResponse = await uploadToSupabase(req.file, user.id);
+          logger.info(`Uploading ${req.files.length} resource images for user: ${user.id}`);
           
-          const mediaItem = {
-            type: 'IMAGE' as const,
-            url: uploadResponse.url,
-            caption: req.body.imageCaption || 'Resource image'
-          };
+          const uploadPromises = req.files.map(async (file, index) => {
+            const uploadResponse = await uploadToSupabase(file, user.id);
+            
+            return {
+              type: 'IMAGE' as const,
+              url: uploadResponse.url,
+              caption: Array.isArray(req.body.imageCaptions) && req.body.imageCaptions[index] 
+                ? req.body.imageCaptions[index] 
+                : `Resource image ${index + 1}`
+            };
+          });
           
-          servicePayload.media = [mediaItem, ...(servicePayload.media || [])];
+          const mediaItems = await Promise.all(uploadPromises);
           
-          logger.info(`Successfully uploaded resource image: ${uploadResponse.url}`);
+          servicePayload.media = [...mediaItems, ...(servicePayload.media || [])];
+          
+          logger.info(`Successfully uploaded ${mediaItems.length} resource images`);
         } catch (uploadError) {
-          logger.error(`Error uploading resource image: ${uploadError}`);
+          logger.error(`Error uploading resource images: ${uploadError}`);
         }
       }
 

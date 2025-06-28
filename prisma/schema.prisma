@@ -30,6 +30,23 @@ model User {
     reportComments ReportComment[]
     Report         Report[]
     resources      Resource[]      @relation("GeneratedByUser")
+
+    followings     Follow[] @relation("Followees")
+    followers      Follow[] @relation("Followers")
+}
+
+model Follow {
+  followerId Int
+  followingId Int
+
+  follower   User   @relation("Followees", fields: [followerId], references: [id], onDelete: Cascade)
+  following  User   @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@id([followerId, followingId])
+  @@index([followingId])
 }
 
 enum ReportStatus {
