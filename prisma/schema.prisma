@@ -29,6 +29,24 @@ model User {
     reportVotes    ReportVote[]
     reportComments ReportComment[]
     Report         Report[]
+    resources      Resource[]      @relation("GeneratedByUser")
+
+    followings     Follow[] @relation("Followees")
+    followers      Follow[] @relation("Followers")
+}
+
+model Follow {
+  followerId Int
+  followingId Int
+
+  follower   User   @relation("Followees", fields: [followerId], references: [id], onDelete: Cascade)
+  following  User   @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@id([followerId, followingId])
+  @@index([followingId])
 }
 
 enum ReportStatus {
@@ -132,4 +150,41 @@ model ReportComment {
 
     @@index([reportId, createdAt])
     @@index([parentId])
+}
+
+enum ResourceType {
+    SURVIVAL
+    HOTLINE
+    FIRST_AID
+}
+
+enum ResourceStatus {
+    PENDING
+    PROCESSING
+    AWAITING_DETAILS
+    COMPLETED
+    FAILED
+}
+
+model Resource {
+    id          String         @id @default(cuid())
+    name        String         // Added name field
+    generatedById Int?
+    generatedBy   User?        @relation("GeneratedByUser", fields: [generatedById], references: [id], onDelete: SetNull)
+    location    Json?          // Geometry type for PostgreSQL - now optional
+    description String?        @db.Text // Now optional
+    resourceType ResourceType
+    status      ResourceStatus @default(PENDING)
+    
+    externalStorageId String?  @unique // mongoDB document id
+    errorMessage     String?
+    
+    created_at   DateTime      @default(now())
+    updated_at   DateTime      @updatedAt
+    completed_at DateTime?
+    
+    @@index([generatedById])
+    @@index([status])
+    @@index([resourceType])
+    @@index([externalStorageId])
 }

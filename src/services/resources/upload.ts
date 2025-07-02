@@ -26,17 +26,16 @@ export const uploadToSupabase = async (
       .toBuffer();
 
     const fileExtension = 'jpg';
-    const filename = `profile-${userId}-${uuidv4()}.${fileExtension}`;
-    const filePath = `profile-images/${filename}`;
+    const filename = `resource-${userId}-${uuidv4()}.${fileExtension}`;
+    const filePath = `resource-images/${filename}`;
 
     const { error } = await supabase.storage
-      .from(`users`)
+      .from(`resource`)
       .upload(filePath, optimizedBuffer, {
         contentType: 'image/jpeg',
         upsert: false,
       });
     
-      // console.log(data);
 
     if (error) {
       throw new Error(`Upload failed: ${error.message}`);
@@ -44,7 +43,7 @@ export const uploadToSupabase = async (
 
     // get public URL
     const { data: urlData } = supabase.storage
-      .from('users')
+      .from('resource')
       .getPublicUrl(filePath);
 
     return {
@@ -58,16 +57,16 @@ export const uploadToSupabase = async (
 
 export const deleteFromSupabase = async (filename: string): Promise<void> => {
   try {
-    const filePath = `profile-images/${filename}`; // folder inside bucket
+    const filePath = `resource-images/${filename}`; // folder inside bucket
     
     const { error } = await supabase.storage
-      .from('users') // bucket name
+      .from('resource') // bucket name
       .remove([filePath]);
 
     if (error) {
-      console.error('Failed to delete old profile image:', error);
+      console.error('Failed to delete old resource image:', error);
     }
   } catch (error) {
-    console.error('Failed to delete old profile image:', error);
+    console.error('Failed to delete old resource image:', error);
   }
 };
