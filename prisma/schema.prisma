@@ -33,6 +33,8 @@ model User {
 
     followings     Follow[] @relation("Followees")
     followers      Follow[] @relation("Followers")
+
+    activities Activity[] @relation("GeneratedActivities")
 }
 
 model Follow {
@@ -188,3 +190,40 @@ model Resource {
     @@index([resourceType])
     @@index([externalStorageId])
 }
+
+enum ActivityType {
+  SHELTER
+  WATER
+  FOOD
+  WIFI
+}
+
+enum ActivityStatus {
+  NEED_HELP
+  OFFERING_HELP
+}
+
+model Activity {
+  id              String          @id @default(cuid())
+  name            String
+  generatedById   Int?
+  generatedBy     User?           @relation("GeneratedActivities", fields: [generatedById], references: [id], onDelete: SetNull)
+  location        Json?
+  description     String?         @db.Text
+  activityType    ActivityType
+  status          ActivityStatus  @default(NEED_HELP)
+
+  externalStorageId String?       @unique
+  errorMessage       String?
+
+  created_at       DateTime       @default(now())
+  updated_at       DateTime       @updatedAt
+  completed_at     DateTime?
+
+  @@index([generatedById])
+  @@index([status])
+  @@index([activityType])
+  @@index([externalStorageId])
+}
+
+
