@@ -39,7 +39,6 @@ Before you begin, ensure you have the following installed on your machine:
    pnpm dev
    ```
 
-   
 ## Contributors
 
 - [Sebastian Kein (AungKyaw Phyo)](https://github.com/AungKyawPhyo1142)
