@@ -5,9 +5,9 @@ name: Sentria Node.js CI Pipeline
 # This workflow runs on pushes and pull requests to main branches.
 on:
   push:
-    branches: [ "main", "dev" ]
+    branches: ['main', 'dev']
   pull_request:
-    branches: [ "main", "dev" ]
+    branches: ['main', 'dev']
 
 jobs:
   # This job will build the code, run checks, and scan for secrets.
@@ -44,7 +44,7 @@ jobs:
       # This uses existing 'lint' script from package.json but ensures it doesn't try to write files.
       # The pre-commit hook should have already formatted the code.
       - name: Run Linter & Formatter Check
-        run: pnpm run lint
+        run: pnpm format && pnpm lint
 
       # Step 6: Scans for any hardcoded secrets or keys
       # This is the security check. It fails the job if secrets are found.
