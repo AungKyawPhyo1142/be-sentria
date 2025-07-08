@@ -23,4 +23,207 @@ model User {
     created_at        DateTime  @default(now())
     updated_at        DateTime  @updatedAt
     deleted_at        DateTime?
+
+    //Relations
+    reports        Report[]        @relation("GeneratedByUser")
+    reportVotes    ReportVote[]
+    reportComments ReportComment[]
+    Report         Report[]
+    resources      Resource[]      @relation("GeneratedByUser")
+
+    followings     Follow[] @relation("Followees")
+    followers      Follow[] @relation("Followers")
+
+    activities Activity[] @relation("GeneratedActivities")
 }
+
+model Follow {
+  followerId Int
+  followingId Int
+
+  follower   User   @relation("Followees", fields: [followerId], references: [id], onDelete: Cascade)
+  following  User   @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@id([followerId, followingId])
+  @@index([followingId])
+}
+
+enum ReportStatus {
+    COMPLETED
+    FAILED
+    PUBLISHED_FAILED
+    FACTCHECK_PENDING
+    FACTCHECK_COMPLETE
+}
+
+enum ReportDBStatus {
+    PENDING_FOR_MONGODB_CREATION
+    PUBLISHED_IN_MONGODB
+    FAILED_TO_PUBLISH_IN_MONGODB
+}
+
+enum ReportType {
+    DISASTER_INCIDENT
+}
+
+model Report {
+    id         String         @id @default(cuid())
+    reportType ReportType
+    name       String
+    parameters Json?
+    country    String?        @default("")
+    city       String?        @default("")
+    dbStatus   ReportDBStatus @default(PENDING_FOR_MONGODB_CREATION) // status in MongoDB, used to track if report is published or not
+    status     ReportStatus   @default(FACTCHECK_PENDING)
+
+    externalStorageId String? @unique // mongoDB document id
+    errorMessage      String?
+
+    generatedById Int?
+    generatedBy   User? @relation("GeneratedByUser", fields: [generatedById], references: [id], onDelete: SetNull) // user who generated the report, set to null if user is deleted
+
+    created_at   DateTime  @default(now())
+    updated_at   DateTime  @updatedAt
+    completed_at DateTime?
+
+    // denormalized counts for quick access, updated by application logic
+    factCheckStatus            String?   @default("")
+    factCheckOverallPercentage Float?    @default(0)
+    factCheckLastUpdatedAt     DateTime?
+    upvoteCount                Int       @default(0)
+    downvoteCount              Int       @default(0)
+    commentCount               Int       @default(0)
+
+    // relations
+    votes    ReportVote[]
+    comments ReportComment[]
+    User     User?           @relation(fields: [userId], references: [id])
+    userId   Int?
+
+    @@index([generatedById])
+    @@index([status])
+    @@index([reportType])
+    @@index([externalStorageId])
+}
+
+enum VoteType {
+    UPVOTE
+    DOWNVOTE
+}
+
+model ReportVote {
+    id       String   @id @default(cuid())
+    voteType VoteType
+
+    userId   Int
+    user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    reportId String
+    report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+
+    @@unique([userId, reportId])
+    @@index([reportId, userId])
+}
+
+model ReportComment {
+    id        String  @id @default(cuid())
+    content   String  @db.Text
+    isEdited  Boolean @default(false)
+    isDeleted Boolean @default(false) // For soft deletion of comments
+
+    userId Int
+    user   User @relation(fields: [userId], references: [id], onDelete: Cascade) // If user deleted, their comments are removed
+
+    reportId String
+    report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade) // If report deleted, comments for it are removed
+
+    // For threaded comments/replies
+    parentId String?
+    parent   ReportComment?  @relation("Replies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction) // NoAction to prevent cycles or accidental mass deletes
+    replies  ReportComment[] @relation("Replies")
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([reportId, createdAt])
+    @@index([parentId])
+}
+
+enum ResourceType {
+    SURVIVAL
+    HOTLINE
+    FIRST_AID
+}
+
+enum ResourceStatus {
+    PENDING
+    PROCESSING
+    AWAITING_DETAILS
+    COMPLETED
+    FAILED
+}
+
+model Resource {
+    id          String         @id @default(cuid())
+    name        String         // Added name field
+    generatedById Int?
+    generatedBy   User?        @relation("GeneratedByUser", fields: [generatedById], references: [id], onDelete: SetNull)
+    location    Json?          // Geometry type for PostgreSQL - now optional
+    description String?        @db.Text // Now optional
+    resourceType ResourceType
+    status      ResourceStatus @default(PENDING)
+    
+    externalStorageId String?  @unique // mongoDB document id
+    errorMessage     String?
+    
+    created_at   DateTime      @default(now())
+    updated_at   DateTime      @updatedAt
+    completed_at DateTime?
+    
+    @@index([generatedById])
+    @@index([status])
+    @@index([resourceType])
+    @@index([externalStorageId])
+}
+
+enum ActivityType {
+  SHELTER
+  WATER
+  FOOD
+  WIFI
+}
+
+enum ActivityStatus {
+  NEED_HELP
+  OFFERING_HELP
+}
+
+model Activity {
+  id              String          @id @default(cuid())
+  name            String
+  generatedById   Int?
+  generatedBy     User?           @relation("GeneratedActivities", fields: [generatedById], references: [id], onDelete: SetNull)
+  location        Json?
+  description     String?         @db.Text
+  activityType    ActivityType
+  status          ActivityStatus  @default(NEED_HELP)
+
+  externalStorageId String?       @unique
+  errorMessage       String?
+
+  created_at       DateTime       @default(now())
+  updated_at       DateTime       @updatedAt
+  completed_at     DateTime?
+
+  @@index([generatedById])
+  @@index([status])
+  @@index([activityType])
+  @@index([externalStorageId])
+}
+
+

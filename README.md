@@ -38,3 +38,13 @@ Before you begin, ensure you have the following installed on your machine:
    ```bash
    pnpm dev
    ```
+
+   
+## Contributors
+
+- [Sebastian Kein (AungKyaw Phyo)](https://github.com/AungKyawPhyo1142)
+- [Nyi Nyi Soe](https://github.com/Nyi-NyiSoe)
+- [Kyi Thant Sin](https://github.com/KyiThantSin)
+- [Linn Latt Cho](https://github.com/linnlatt132)
+- [Saw Zi Dunn](https://github.com/SawZiDunn)
+- [Phyu Thant Kyaw](https://github.com/My1ra)
