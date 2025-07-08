@@ -6,8 +6,7 @@ import {
   NotFoundError,
   ValidationError,
 } from '@/utils/errors';
-
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { object, string, z } from 'zod';
 
 enum ActivityType {
@@ -60,12 +59,13 @@ const UpdateActivitySchema = CreateActivityRequestSchema;
 export async function CreateActivity(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   try {
     const user = req.user;
     if (!user) throw new AuthenticationError('User not authenticated');
-    if (!user.verified_profile) throw new AuthenticationError('User is not verified');
+    if (!user.verified_profile)
+      throw new AuthenticationError('User is not verified');
 
     if (typeof req.body?.parameters === 'string') {
       try {
@@ -77,14 +77,17 @@ export async function CreateActivity(
 
     const validatedRequestBody = CreateActivityRequestSchema.parse(req.body);
     const { activityType, name } = validatedRequestBody;
-    const parameters = (validatedRequestBody as any).parameters;
+    const parameters = validatedRequestBody.parameters;
 
     const payload: activityService.ValidatedActivityPayload = {
       description: parameters.description,
-      activityType: activityType as any,
+      activityType: activityType,
       location: {
         type: 'Point',
-        coordinates: [parameters.location.longitude, parameters.location.latitude],
+        coordinates: [
+          parameters.location.longitude,
+          parameters.location.latitude,
+        ],
       },
       address: {
         street: parameters.address?.street,
@@ -109,12 +112,13 @@ export async function CreateActivity(
 export async function UpdateActivity(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   try {
     const user = req.user;
     if (!user) throw new AuthenticationError('User not authenticated');
-    if (!user.verified_profile) throw new AuthenticationError('User is not verified');
+    if (!user.verified_profile)
+      throw new AuthenticationError('User is not verified');
 
     const activityId = req.params.id;
     if (!activityId) throw new NotFoundError('Activity ID is required');
@@ -135,7 +139,10 @@ export async function UpdateActivity(
       activityType,
       location: {
         type: 'Point',
-        coordinates: [parameters.location.longitude, parameters.location.latitude],
+        coordinates: [
+          parameters.location.longitude,
+          parameters.location.latitude,
+        ],
       },
       address: {
         street: parameters.address?.street,
@@ -150,7 +157,7 @@ export async function UpdateActivity(
       activityId,
       payload,
       name,
-      user
+      user,
     );
     return res.status(200).json({ result });
   } catch (error) {
@@ -162,7 +169,11 @@ export async function UpdateActivity(
   }
 }
 
-export async function GetActivities(req: Request, res: Response, next: NextFunction) {
+export async function GetActivities(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   try {
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
     const skip = req.query.skip ? parseInt(req.query.skip as string) : 0;
@@ -178,7 +189,7 @@ export async function GetActivities(req: Request, res: Response, next: NextFunct
 export async function GetActivityById(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   try {
     const activityId = req.params.id;
@@ -194,14 +205,18 @@ export async function GetActivityById(
   }
 }
 
-
-export async function DeleteActivity(req: Request, res: Response, next: NextFunction) {
+export async function DeleteActivity(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   try {
     const user = req.user;
     if (!user) throw new AuthenticationError('User not authenticated');
 
     const mongoActivityId = req.params.id;
-    if (!mongoActivityId) throw new NotFoundError('Activity MongoDB ID is required');
+    if (!mongoActivityId)
+      throw new NotFoundError('Activity MongoDB ID is required');
 
     const result = await activityService.deleteActivity(mongoActivityId, user);
     return res.status(200).json(result);

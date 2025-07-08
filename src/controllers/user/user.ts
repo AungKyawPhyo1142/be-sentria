@@ -1,8 +1,8 @@
+import { deleteFromSupabase, uploadToSupabase } from '@/services/user/upload';
 import * as userService from '@/services/user/user';
 import { ValidationError } from '@/utils/errors';
 import { NextFunction, Request, Response } from 'express';
-import { boolean, date, object, string, ZodError } from 'zod';
-import { uploadToSupabase, deleteFromSupabase } from '@/services/user/upload';
+import { ZodError, boolean, date, object, string } from 'zod';
 
 const userDetailSchema = object({
   firstName: string().optional(),
@@ -35,26 +35,26 @@ const details = async (req: Request, res: Response, next: NextFunction) => {
 };
 
 const update = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const userId = parseInt(req.params.id, 10);
-      const updateData = userDetailSchema.parse(req.body);
+  try {
+    const userId = parseInt(req.params.id, 10);
+    const updateData = userDetailSchema.parse(req.body);
 
-      if (req.file) {
-        try {
-          if (updateData.profile_image) {
-            const filename = updateData.profile_image.split('/').pop();
-            if (filename) {
-              await deleteFromSupabase(filename);
-            }
+    if (req.file) {
+      try {
+        if (updateData.profile_image) {
+          const filename = updateData.profile_image.split('/').pop();
+          if (filename) {
+            await deleteFromSupabase(filename);
           }
-          
-          const uploadResponse = await uploadToSupabase(req.file, userId);
-          updateData.profile_image = uploadResponse.url;
-        } catch (uploadError) {
-          console.error('Error uploading profile image:', uploadError);
-          throw new Error('Failed to upload profile image');
         }
+
+        const uploadResponse = await uploadToSupabase(req.file, userId);
+        updateData.profile_image = uploadResponse.url;
+      } catch (uploadError) {
+        console.error('Error uploading profile image:', uploadError);
+        throw new Error('Failed to upload profile image');
       }
+    }
 
     const response = await userService.update(userId, updateData);
 

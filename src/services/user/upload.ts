@@ -9,7 +9,10 @@ export interface UploadResponse {
   mimetype: string;
 }
 
-const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!);
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_KEY!,
+);
 
 export const uploadToSupabase = async (
   file: Express.Multer.File,
@@ -35,8 +38,8 @@ export const uploadToSupabase = async (
         contentType: 'image/jpeg',
         upsert: false,
       });
-    
-      // console.log(data);
+
+    // console.log(data);
 
     if (error) {
       throw new Error(`Upload failed: ${error.message}`);
@@ -59,7 +62,7 @@ export const uploadToSupabase = async (
 export const deleteFromSupabase = async (filename: string): Promise<void> => {
   try {
     const filePath = `profile-images/${filename}`; // folder inside bucket
-    
+
     const { error } = await supabase.storage
       .from('users') // bucket name
       .remove([filePath]);

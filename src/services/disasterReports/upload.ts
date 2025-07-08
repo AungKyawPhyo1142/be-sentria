@@ -55,19 +55,18 @@ export const uploadToSupabase = async (
   }
 };
 
-
 export const deleteFromSupabase = async (filename: string): Promise<void> => {
-    try {
-      const filePath = `disaster-report-images/${filename}`; // folder inside bucket
-      
-      const { error } = await supabase.storage
-        .from('reports') // bucket name
-        .remove([filePath]);
-  
-      if (error) {
-        console.error('Failed to delete old profile image:', error);
-      }
-    } catch (error) {
+  try {
+    const filePath = `disaster-report-images/${filename}`; // folder inside bucket
+
+    const { error } = await supabase.storage
+      .from('reports') // bucket name
+      .remove([filePath]);
+
+    if (error) {
       console.error('Failed to delete old profile image:', error);
     }
-  };
+  } catch (error) {
+    console.error('Failed to delete old profile image:', error);
+  }
+};

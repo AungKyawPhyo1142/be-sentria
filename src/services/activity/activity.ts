@@ -1,6 +1,10 @@
 import { getMongoDB } from '@/libs/mongo';
 import logger from '@/logger';
-import { AuthenticationError, InternalServerError, NotFoundError } from '@/utils/errors';
+import {
+  AuthenticationError,
+  InternalServerError,
+  NotFoundError,
+} from '@/utils/errors';
 import { PrismaClient, User } from '@prisma/client';
 import { Collection, ObjectId } from 'mongodb';
 
@@ -10,12 +14,12 @@ export enum ActivityType {
   SHELTER = 'SHELTER',
   WATER = 'WATER',
   FOOD = 'FOOD',
-  WIFI = 'WIFI'
+  WIFI = 'WIFI',
 }
 
 export enum ActivityStatus {
   NEED_HELP = 'NEED_HELP',
-  OFFERING_HELP = 'OFFERING_HELP'
+  OFFERING_HELP = 'OFFERING_HELP',
 }
 
 export interface ValidatedActivityPayload {
@@ -39,7 +43,7 @@ const ACTIVITY_COLLECTION_NAME = 'activities';
 export async function createActivity(
   payload: ValidatedActivityPayload,
   pgActivityName: string,
-  user: User
+  user: User,
 ) {
   logger.info(`Creating activity for user: ${user.id}`);
   const requestingUserId = user.id;
@@ -50,20 +54,22 @@ export async function createActivity(
     const pgActivity = await prisma.activity.create({
       data: {
         generatedBy: {
-          connect: { id: requestingUserId }
+          connect: { id: requestingUserId },
         },
         name: pgActivityName,
         activityType: payload.activityType,
         status: ActivityStatus.NEED_HELP,
         description: payload.description,
         location: payload.location,
-      }
+      },
     });
 
     pgActivityId = pgActivity.id;
 
     const db = await getMongoDB();
-    const activityCollection: Collection = db.collection(ACTIVITY_COLLECTION_NAME);
+    const activityCollection: Collection = db.collection(
+      ACTIVITY_COLLECTION_NAME,
+    );
     const now = new Date();
 
     const mongoActivityDocument = {
@@ -78,7 +84,9 @@ export async function createActivity(
       systemUpdatedAt: now,
     };
 
-    const mongoResult = await activityCollection.insertOne(mongoActivityDocument);
+    const mongoResult = await activityCollection.insertOne(
+      mongoActivityDocument,
+    );
 
     if (!mongoResult.insertedId) {
       throw new InternalServerError('Error creating activity in mongoDB');
@@ -92,7 +100,7 @@ export async function createActivity(
         status: ActivityStatus.OFFERING_HELP,
         externalStorageId: mongoDocIDAsString,
         completed_at: now,
-      }
+      },
     });
 
     return {
@@ -100,7 +108,6 @@ export async function createActivity(
       mongoDbActivityId: mongoDocIDAsString,
       message: `Activity "${pgActivityName}" created successfully`,
     };
-
   } catch (error) {
     logger.error(`Error creating activity: ${error}`);
     throw error;
@@ -128,10 +135,12 @@ export async function updateActivity(
     }
 
     if (existingActivity.generatedById !== requestingUserId) {
-      throw new AuthenticationError('You are not authorized to update this activity');
+      throw new AuthenticationError(
+        'You are not authorized to update this activity',
+      );
     }
 
-    const updatedActivity = await (prisma as any).activity.update({
+    const updatedActivity = await prisma.activity.update({
       where: {
         id: activityId,
       },
@@ -148,7 +157,9 @@ export async function updateActivity(
     logger.info(`Activity updated: ${updatedActivity.id}`);
 
     const db = await getMongoDB();
-    const activityCollection: Collection = db.collection(ACTIVITY_COLLECTION_NAME);
+    const activityCollection: Collection = db.collection(
+      ACTIVITY_COLLECTION_NAME,
+    );
 
     const updatedMongoActivity = await activityCollection.updateOne(
       {
@@ -164,7 +175,7 @@ export async function updateActivity(
           address: payload.address,
           systemUpdatedAt: new Date(),
         },
-      }
+      },
     );
 
     if (updatedMongoActivity.matchedCount === 0) {
@@ -185,7 +196,9 @@ export async function updateActivity(
 export async function getActivities(limit: number = 10, skip: number = 0) {
   try {
     const db = await getMongoDB();
-    const activityCollection: Collection = db.collection(ACTIVITY_COLLECTION_NAME);
+    const activityCollection: Collection = db.collection(
+      ACTIVITY_COLLECTION_NAME,
+    );
 
     const totalCount = await activityCollection.countDocuments();
 
@@ -202,8 +215,8 @@ export async function getActivities(limit: number = 10, skip: number = 0) {
         total: totalCount,
         limit,
         skip,
-        hasMore: skip + activities.length < totalCount
-      }
+        hasMore: skip + activities.length < totalCount,
+      },
     };
   } catch (error) {
     logger.error(`Error getting activities: ${error}`);
@@ -214,10 +227,12 @@ export async function getActivities(limit: number = 10, skip: number = 0) {
 export async function getActivityById(activityId: string) {
   try {
     const db = await getMongoDB();
-    const activityCollection: Collection = db.collection(ACTIVITY_COLLECTION_NAME);
+    const activityCollection: Collection = db.collection(
+      ACTIVITY_COLLECTION_NAME,
+    );
 
     const activity = await activityCollection.findOne({
-      _id: new ObjectId(activityId)
+      _id: new ObjectId(activityId),
     });
 
     if (!activity) {
@@ -232,15 +247,19 @@ export async function getActivityById(activityId: string) {
 }
 
 export async function deleteActivity(activityId: string, user: User) {
-  logger.info(`Deleting activity with MongoDB ID ${activityId} for user: ${user.id}`);
+  logger.info(
+    `Deleting activity with MongoDB ID ${activityId} for user: ${user.id}`,
+  );
   const requestingUserId = user.id;
 
   try {
     const db = await getMongoDB();
-    const activityCollection: Collection = db.collection(ACTIVITY_COLLECTION_NAME);
+    const activityCollection: Collection = db.collection(
+      ACTIVITY_COLLECTION_NAME,
+    );
 
     const activityDocument = await activityCollection.findOne({
-      _id: new ObjectId(activityId)
+      _id: new ObjectId(activityId),
     });
 
     if (!activityDocument) {
@@ -251,45 +270,57 @@ export async function deleteActivity(activityId: string, user: User) {
     const postgresActivityId = activityDocument.postgresActivityId;
 
     if (!postgresActivityId) {
-      logger.warn(`MongoDB activity ${activityId} has no PostgreSQL ID reference`);
-      throw new InternalServerError('Invalid activity data: missing PostgreSQL reference');
+      logger.warn(
+        `MongoDB activity ${activityId} has no PostgreSQL ID reference`,
+      );
+      throw new InternalServerError(
+        'Invalid activity data: missing PostgreSQL reference',
+      );
     }
 
     const existingActivity = await prisma.activity.findUnique({
       where: {
-        id: postgresActivityId
-      }
+        id: postgresActivityId,
+      },
     });
 
     if (!existingActivity) {
-      logger.warn(`PostgreSQL activity with ID ${postgresActivityId} not found`);
+      logger.warn(
+        `PostgreSQL activity with ID ${postgresActivityId} not found`,
+      );
       throw new NotFoundError('Activity not found in PostgreSQL database');
     }
 
     if (existingActivity.generatedById !== requestingUserId) {
-      throw new AuthenticationError('You are not authorized to delete this activity');
+      throw new AuthenticationError(
+        'You are not authorized to delete this activity',
+      );
     }
 
     // delete from MongoDB
     const mongoDeleteResult = await activityCollection.deleteOne({
-      _id: new ObjectId(activityId)
+      _id: new ObjectId(activityId),
     });
 
     if (mongoDeleteResult.deletedCount === 0) {
       logger.warn(`Failed to delete MongoDB activity with ID ${activityId}`);
       throw new InternalServerError('Failed to delete activity from MongoDB');
     } else {
-      logger.info(`MongoDB activity with ID ${activityId} deleted successfully`);
+      logger.info(
+        `MongoDB activity with ID ${activityId} deleted successfully`,
+      );
     }
 
     // delete from PostgreSQL
     await prisma.activity.delete({
       where: {
-        id: postgresActivityId
-      }
+        id: postgresActivityId,
+      },
     });
 
-    logger.info(`PostgreSQL activity ${postgresActivityId} deleted successfully`);
+    logger.info(
+      `PostgreSQL activity ${postgresActivityId} deleted successfully`,
+    );
 
     return {
       mongoDbActivityId: activityId,
@@ -302,4 +333,3 @@ export async function deleteActivity(activityId: string, user: User) {
     throw error;
   }
 }
-

@@ -261,9 +261,9 @@ async function connectAndConsumeResults(attempt = 1): Promise<void> {
             logger.info(
               `[FactCheckResultConsumer] Result for PG_ID ${resultPayload.postgresReportId} fully processed and ACKed.`,
             ); //
-          } catch (processingError: any) {
+          } catch (processingError: unknown) {
             logger.error(
-              `[FactCheckResultConsumer] Error processing fact-check result message (DeliveryTag ${deliveryTag}): ${processingError.message}`,
+              `[FactCheckResultConsumer] Error processing fact-check result message (DeliveryTag ${deliveryTag}): ${processingError instanceof Error ? processingError.message : 'Unknown error'}`,
               { error: processingError, payloadString: msg.content.toString() },
             ); //
             resultsConsumerChannel?.nack(msg, false, false); // Nack, don't requeue for persistent errors
@@ -276,9 +276,9 @@ async function connectAndConsumeResults(attempt = 1): Promise<void> {
       },
       { noAck: false },
     ); // Manual acknowledgment is crucial
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(
-      `[FactCheckResultConsumer] Failed to connect/start consuming results queue: ${error.message}. Retrying...`,
+      `[FactCheckResultConsumer] Failed to connect/start consuming results queue: ${error instanceof Error ? error.message : 'Unknown error'}. Retrying...`,
       error,
     ); //
     if (resultsConsumerConnection) {
@@ -287,6 +287,10 @@ async function connectAndConsumeResults(attempt = 1): Promise<void> {
         resultsConsumerConnection.removeAllListeners();
       } catch (e) {
         /* ignore */
+        logger.error(
+          '[FactCheckResultConsumer] Error removing listeners from connection:',
+          e,
+        ); //
       }
     }
     resultsConsumerConnection = null;
