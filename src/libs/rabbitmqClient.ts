@@ -73,10 +73,10 @@ async function connectToRabbitMQ(attempt = 1): Promise<void> {
     logger.info(
       `[RabbitMQ] Queue ${ENV.RABBITMQ_FACTCHECK_QUEUE_NAME} asserted & ready`,
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(
       `[RabbitMQ] Failed to connect or create channel (attempt ${attempt}/${MAX_RETRIES}):`,
-      error.message,
+      error instanceof Error ? error.message : String(error),
     );
     // Nullify connection and channel on failure
     if (connection) connection.removeAllListeners(); // ensure listeners are off the failed connection
@@ -96,7 +96,9 @@ async function connectToRabbitMQ(attempt = 1): Promise<void> {
         '[RabbitMQ] Max connection retries reached. Failed to connect to RabbitMQ.',
       );
       throw new InternalServerError(
-        `Failed to connect to RabbitMQ after ${MAX_RETRIES} attempts: ${error.message}`,
+        `Failed to connect to RabbitMQ after ${MAX_RETRIES} attempts: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       );
     }
   }
@@ -143,7 +145,7 @@ export async function publishToQueue(
         queueName,
         messageBuffer,
         options,
-        (err: any, _ok: any) => {
+        (err: Error | null, _ok: unknown) => {
           if (err !== null) {
             logger.error(
               `[RabbitMQ] Message NACKed or failed to publish message: ${err.message}`,
@@ -158,9 +160,11 @@ export async function publishToQueue(
         },
       );
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(
-      `[RabbitMQ] Failed to publish message to queue ${queueName}: ${error.message}`,
+      `[RabbitMQ] Failed to publish message to queue ${queueName}: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
     );
     return false;
   }
@@ -172,8 +176,11 @@ export async function closeRabbitMQConnection(): Promise<void> {
     try {
       await channel.close();
       logger.info('[RabbitMQ] Channel closed');
-    } catch (error: any) {
-      logger.error('[RabbitMQ] Failed to close channel:', error.message);
+    } catch (error: unknown) {
+      logger.error(
+        '[RabbitMQ] Failed to close channel:',
+        error instanceof Error ? error.message : String(error),
+      );
     }
     channel = null; // clean up the channel reference
   }
@@ -184,8 +191,11 @@ export async function closeRabbitMQConnection(): Promise<void> {
       connection.removeAllListeners('close');
       await connection.close();
       logger.info('[RabbitMQ] Connection closed');
-    } catch (error: any) {
-      logger.error('[RabbitMQ] Failed to close connection:', error.message);
+    } catch (error: unknown) {
+      logger.error(
+        '[RabbitMQ] Failed to close connection:',
+        error instanceof Error ? error.message : String(error),
+      );
     }
     connection = null; // clean up the connection reference
   }

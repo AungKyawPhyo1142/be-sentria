@@ -3,8 +3,8 @@ import logger from '@/logger';
 import { DatabaseError } from '@/utils/errors';
 import { Db, MongoClient } from 'mongodb';
 
-let client: MongoClient;
-let dbInstance: Db;
+let client: MongoClient | null = null;
+let dbInstance: Db | null = null;
 
 export async function connectToMongoDB(): Promise<Db> {
   if (dbInstance) {
@@ -44,10 +44,10 @@ export async function closeMongoDBConnection(): Promise<void> {
     try {
       await client.close();
       logger.info('MongoDB connection closed');
-      //@ts-ignore
-      dbInstance = undefined;
-      //@ts-ignore
-      client = undefined;
+      // Reset the dbInstance and client to allow for a new connection
+      dbInstance = null;
+      // Reset the client to allow for a new connection
+      client = null;
     } catch (error) {
       logger.error('Error closing MongoDB connection', error);
       throw new DatabaseError('Error closing MongoDB connection');

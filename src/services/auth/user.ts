@@ -180,7 +180,9 @@ const verifyEmail = async (token: string) => {
     };
   } catch (error) {
     logger.error('Error verify email', error);
-    throw new EmailValidationError('There was an error with email verification');
+    throw new EmailValidationError(
+      'There was an error with email verification',
+    );
   }
 };
 
@@ -227,7 +229,9 @@ const resendEmail = async (email: string) => {
     };
   } catch (error) {
     logger.error('Error resend email', error);
-    throw new EmailValidationError('There was an error with email verification');
+    throw new EmailValidationError(
+      'There was an error with email verification',
+    );
   }
 };
 
