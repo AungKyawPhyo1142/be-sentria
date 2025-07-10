@@ -159,3 +159,23 @@ try{
   return next(error);
 }
 }
+
+export async function GetCommentById(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+){
+try{
+  const commentId = req.params.id;
+
+  if(!commentId){
+    throw new NotFoundError('Comment ID is required');
+  }
+
+  const result = await commentService.getCommentById(commentId);
+  return res.status(200).json(result);
+}catch(error){
+  logger.error(`Error getting comment by id: ${error}`);
+  return next(error);
+}
+} 

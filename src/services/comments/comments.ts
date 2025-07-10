@@ -1,6 +1,6 @@
 import { getMongoDB } from "@/libs/mongo";
 import logger from "@/logger";
-import { InternalServerError } from "@/utils/errors";
+import { InternalServerError, NotFoundError } from "@/utils/errors";
 import { User } from "@prisma/client";
 import { Collection, ObjectId } from "mongodb";
 
@@ -121,6 +121,28 @@ export async function updateComment(commentId: string, payload: ValidatedComment
 
   }catch(error){
     logger.error(`Error updating comment: ${error}`);
+    throw error;
+  }
+}
+
+export async function getCommentById(commentId: string){
+  try{
+    const db = await getMongoDB();
+    const commentCollection: Collection = db.collection(
+      COMMENT_COLLECTION_NAME,
+    );
+
+    const result = await commentCollection.findOne({
+      _id: new ObjectId(commentId),
+    });
+
+    if(!result){
+      throw new NotFoundError('Comment not found in mongoDB');
+    }
+
+    return result;
+  }catch(error){
+    logger.error(`Error getting comment by id: ${error}`);
     throw error;
   }
 }
