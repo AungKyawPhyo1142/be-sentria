@@ -69,3 +69,20 @@ export async function CreateComment(
     return next(error);
   }
 }
+
+export async function GetComments(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+){
+try{
+  const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+  const skip = req.query.skip ? parseInt(req.query.skip as string) : 0;
+
+  const result = await commentService.getComments(limit, skip);
+  return res.status(200).json(result);
+}catch(error){
+  logger.error(`Error getting comments: ${error}`);
+  return next(error);
+}
+}

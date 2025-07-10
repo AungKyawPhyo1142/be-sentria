@@ -55,3 +55,34 @@ export async function createComment(
     throw error;
   }
 }
+
+export async function getComments(limit: number, skip: number){
+  try{
+    const db = await getMongoDB();
+    const commentCollection: Collection = db.collection(
+      COMMENT_COLLECTION_NAME,
+    );
+
+    const totalCount = await commentCollection.countDocuments();
+
+    const comments = await commentCollection
+      .find({})
+      .sort({ systemCreatedAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray();
+
+    return {
+      comments,
+      pagination: {
+        total: totalCount,
+        limit,
+        skip,
+        hasMore: skip + comments.length < totalCount,
+      },
+    };
+  }catch(error){
+    logger.error(`Error getting comments: ${error}`);
+    throw error;
+  }
+}
