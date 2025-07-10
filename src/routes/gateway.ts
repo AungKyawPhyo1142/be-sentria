@@ -7,6 +7,7 @@ import reportRouter from '@/routes/reports/reports';
 import resourceRouter from '@/routes/resources/resources';
 import userRouter from '@/routes/user/user';
 import commentsRouter from '@/routes/comments/comments';
+import commentRepliesRouter from '@/routes/commentReplies/commentReplies';
 import { Router } from 'express';
 
 const gateway = Router();
@@ -20,5 +21,6 @@ gateway.use('/goTest', goTestRouter);
 gateway.use('/followers', followersRouter);
 gateway.use('/activity', activityRouter);
 gateway.use('/comments', commentsRouter);
+gateway.use('/commentReplies', commentRepliesRouter);
 
 export default gateway;
