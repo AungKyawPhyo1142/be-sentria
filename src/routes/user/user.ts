@@ -10,7 +10,7 @@ router.patch(
   '/:id',
   secureRoute(),
   upload.single('profile_image'),
-  userController.update
+  userController.update,
 );
 router.delete('/:id', secureRoute(), userController.softDelete);
 router.patch('/:id/recover', secureRoute(), userController.recover);

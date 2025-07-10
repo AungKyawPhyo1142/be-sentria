@@ -1,17 +1,19 @@
 import prisma from '@/libs/prisma';
 import logger from '@/logger';
 import { AuthenticationError, InternalServerError } from '@/utils/errors';
-import { User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 
 export async function followUser(follower: User, followingId: number) {
   const followerId = follower.id;
 
   if (followerId === followingId) {
-    throw new AuthenticationError("Users cannot follow themselves");
+    throw new AuthenticationError('Users cannot follow themselves');
   }
 
   try {
-    logger.info(`User ${followerId} is attempting to follow user ${followingId}`);
+    logger.info(
+      `User ${followerId} is attempting to follow user ${followingId}`,
+    );
 
     await prisma.follow.create({
       data: {
@@ -27,8 +29,11 @@ export async function followUser(follower: User, followingId: number) {
       followerId,
       followingId,
     };
-  } catch (error: any) {
-    if (error.code === 'P2002') {
+  } catch (error: unknown) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
       logger.warn(`User ${followerId} already follows user ${followingId}`);
       return {
         message: 'Already following',
@@ -46,7 +51,9 @@ export async function unfollowUser(follower: User, followingId: number) {
   const followerId = follower.id;
 
   try {
-    logger.info(`User ${followerId} is attempting to unfollow user ${followingId}`);
+    logger.info(
+      `User ${followerId} is attempting to unfollow user ${followingId}`,
+    );
 
     const result = await prisma.follow.deleteMany({
       where: {
@@ -64,7 +71,9 @@ export async function unfollowUser(follower: User, followingId: number) {
       };
     }
 
-    logger.info(`User ${followerId} successfully unfollowed user ${followingId}`);
+    logger.info(
+      `User ${followerId} successfully unfollowed user ${followingId}`,
+    );
 
     return {
       message: 'Unfollowed successfully',
@@ -86,7 +95,7 @@ export async function getFollowers(userId: number) {
       include: { follower: true },
     });
 
-    return followers.map(f => f.follower);
+    return followers.map((f) => f.follower);
   } catch (error) {
     logger.error(`Error fetching followers: ${error}`);
     throw new InternalServerError('Error fetching followers');
@@ -102,7 +111,7 @@ export async function getFollowing(userId: number) {
       include: { following: true },
     });
 
-    return following.map(f => f.following);
+    return following.map((f) => f.following);
   } catch (error) {
     logger.error(`Error fetching followings: ${error}`);
     throw new InternalServerError('Error fetching followings');

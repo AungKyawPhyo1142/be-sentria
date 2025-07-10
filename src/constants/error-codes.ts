@@ -27,7 +27,8 @@ export const ErrorCodes = {
     code: 'SENTRIA-50003',
     message: 'Email verification error.',
     statusCode: 500,
-    userMessage: 'There was an error with email verification. Please try again later.',
+    userMessage:
+      'There was an error with email verification. Please try again later.',
   },
   FORBIDDEN: {
     code: 'SENTRIA-40301',
