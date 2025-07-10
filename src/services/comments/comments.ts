@@ -3,14 +3,14 @@ import logger from "@/logger";
 import { InternalServerError, NotFoundError } from "@/utils/errors";
 import { User } from "@prisma/client";
 import { Collection, ObjectId } from "mongodb";
-
+import { DISASTER_COLLECTION_NAME } from "../disasterReports/disasterReports";
 export interface ValidatedCommentPayload{
     post_id: string;
     comment: string;
     media?: string | null;
 }
 
-const COMMENT_COLLECTION_NAME = 'comments';
+export const COMMENT_COLLECTION_NAME = 'comments';
 
 export async function createComment(
   payload: ValidatedCommentPayload,
@@ -146,4 +146,55 @@ export async function getCommentById(commentId: string){
     throw error;
   }
 }
-  
+
+export async function deleteComment(commentId: string, user: User) {
+  try {
+    const db = await getMongoDB();
+    const commentCollection: Collection = db.collection(
+      COMMENT_COLLECTION_NAME,
+    );
+
+    const comment = await commentCollection.findOne({
+      _id: new ObjectId(commentId),
+    });
+
+    if (!comment) {
+      throw new NotFoundError('Comment not found');
+    }
+
+    // user is comment owner or post owner
+    const isCommentOwner = comment.userId === user.id;
+    
+    let isPostOwner = false;
+    if (!isCommentOwner) {
+      const postCollection: Collection = db.collection(DISASTER_COLLECTION_NAME);
+      const post = await postCollection.findOne({
+        _id: new ObjectId(comment.postId),
+      });
+      
+      // check it is post owner or not
+      if (post) {
+        isPostOwner = post.userId === user.id;
+      }
+    }
+
+    if (!isCommentOwner && !isPostOwner) {
+      throw new Error('Unauthorized: Only comment owner or post owner can delete this comment');
+    }
+
+    const result = await commentCollection.deleteOne({
+      _id: new ObjectId(commentId),
+    });
+
+    if (result.deletedCount === 0) {
+      throw new InternalServerError('Failed to delete comment');
+    }
+
+    return {
+      message: 'Comment deleted successfully',
+    };
+  } catch (error) {
+    logger.error(`Error deleting comment: ${error}`);
+    throw error;
+  }
+}

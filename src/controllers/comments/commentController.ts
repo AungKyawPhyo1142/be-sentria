@@ -20,8 +20,7 @@ const CreateCommentSchema = object({
     type: z.enum(['IMAGE', 'VIDEO']),
     url: string().url({ message: 'Invalid URL' }),
     caption: string().max(250).optional(),
-  })
-  .optional(),
+  }).optional(),
 });
 
 const UpdateCommentSchema = object({
@@ -33,8 +32,7 @@ const UpdateCommentSchema = object({
     type: z.enum(['IMAGE', 'VIDEO']),
     url: string().url({ message: 'Invalid URL' }),
     caption: string().max(250).optional(),
-  })
-  .optional(),
+  }).optional(),
 });
 
 export async function CreateComment(
@@ -89,15 +87,15 @@ export async function UpdateComment(
   req: Request,
   res: Response,
   next: NextFunction,
-){
-  try{
+) {
+  try {
     const user = req.user;
-    if (!user){
+    if (!user) {
       throw new AuthenticationError('User not authenticated');
     }
 
     const commentId = req.params.id;
-    if(!commentId){
+    if (!commentId) {
       throw new NotFoundError('Comment ID is required');
     }
 
@@ -118,7 +116,7 @@ export async function UpdateComment(
 
     if (req.file) {
       try {
-        if(servicePayload.media){
+        if (servicePayload.media) {
           const filename = servicePayload?.media?.split('/')?.pop();
           if (filename) {
             await deleteFromSupabase(filename);
@@ -132,10 +130,14 @@ export async function UpdateComment(
       }
     }
 
-    let result = await commentService.updateComment(commentId, servicePayload, user);
+    let result = await commentService.updateComment(
+      commentId,
+      servicePayload,
+      user,
+    );
     return res.status(200).json({ result });
-  }catch(error){
-    if(error instanceof z.ZodError){
+  } catch (error) {
+    if (error instanceof z.ZodError) {
       return next(new ValidationError(error.issues));
     }
     logger.error(`Error updating comment: ${error}`);
@@ -147,35 +149,59 @@ export async function GetComments(
   req: Request,
   res: Response,
   next: NextFunction,
-){
-try{
-  const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
-  const skip = req.query.skip ? parseInt(req.query.skip as string) : 0;
+) {
+  try {
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+    const skip = req.query.skip ? parseInt(req.query.skip as string) : 0;
 
-  const result = await commentService.getComments(limit, skip);
-  return res.status(200).json(result);
-}catch(error){
-  logger.error(`Error getting comments: ${error}`);
-  return next(error);
-}
+    const result = await commentService.getComments(limit, skip);
+    return res.status(200).json(result);
+  } catch (error) {
+    logger.error(`Error getting comments: ${error}`);
+    return next(error);
+  }
 }
 
 export async function GetCommentById(
   req: Request,
   res: Response,
   next: NextFunction,
-){
-try{
-  const commentId = req.params.id;
+) {
+  try {
+    const commentId = req.params.id;
 
-  if(!commentId){
-    throw new NotFoundError('Comment ID is required');
+    if (!commentId) {
+      throw new NotFoundError('Comment ID is required');
+    }
+
+    const result = await commentService.getCommentById(commentId);
+    return res.status(200).json(result);
+  } catch (error) {
+    logger.error(`Error getting comment by id: ${error}`);
+    return next(error);
   }
-
-  const result = await commentService.getCommentById(commentId);
-  return res.status(200).json(result);
-}catch(error){
-  logger.error(`Error getting comment by id: ${error}`);
-  return next(error);
 }
-} 
+
+export async function DeleteComment(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const commentId = req.params.id;
+    if(!commentId){
+      throw new NotFoundError('Comment ID is required');
+    }
+
+    const user = req.user;
+    if(!user){
+      throw new AuthenticationError('User not authenticated');
+    }
+
+    const result = await commentService.deleteComment(commentId, user);
+    return res.status(200).json({ result });
+  } catch (error) {
+    logger.error(`Error deleting comment: ${error}`);
+    return next(error);
+  }
+}
