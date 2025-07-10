@@ -4,10 +4,14 @@ import { InternalServerError, NotFoundError } from "@/utils/errors";
 import { User } from "@prisma/client";
 import { Collection, ObjectId } from "mongodb";
 import { DISASTER_COLLECTION_NAME } from "../disasterReports/disasterReports";
-export interface ValidatedCommentPayload{
-    post_id: string;
-    comment: string;
-    media?: string | null;
+import { deleteFromSupabase } from "./upload";
+import { deleteFromSupabase as deleteCommentReplyFromSupabase } from "../commentReplies/upload";
+import { COMMENT_REPLY_COLLECTION_NAME } from "../commentReplies/commentReplies";
+
+export interface ValidatedCommentPayload {
+  post_id: string;
+  comment: string;
+  media?: string | null;
 }
 
 export const COMMENT_COLLECTION_NAME = 'comments';
@@ -16,10 +20,10 @@ export async function createComment(
   payload: ValidatedCommentPayload,
   user: User,
 ) {
-    logger.info(`Creating comment for post: ${user.id}`);
-    const requestingUserId = user.id;
-  
-    try {    
+  logger.info(`Creating comment for post: ${user.id}`);
+  const requestingUserId = user.id;
+
+  try {
     const db = await getMongoDB();
     const commentCollection: Collection = db.collection(
       COMMENT_COLLECTION_NAME,
@@ -28,7 +32,7 @@ export async function createComment(
 
     const mongoCommentDocument = {
       userId: requestingUserId,
-      postId : payload.post_id,
+      postId: payload.post_id,
       comment: payload.comment,
       media: payload.media,
       commentTimestamp: now,
@@ -39,7 +43,7 @@ export async function createComment(
     const result = await commentCollection.insertOne(
       mongoCommentDocument,
     )
-    
+
     if (!result.insertedId) {
       throw new InternalServerError(
         'Error creating resource in mongoDB',
@@ -49,15 +53,15 @@ export async function createComment(
     return {
       message: `Comment for ${payload.post_id} created successfully`,
     };
-    
+
   } catch (error) {
     logger.error(`Error creating comments: ${error}`);
     throw error;
   }
 }
 
-export async function getComments(limit: number, skip: number){
-  try{
+export async function getComments(limit: number, skip: number) {
+  try {
     const db = await getMongoDB();
     const commentCollection: Collection = db.collection(
       COMMENT_COLLECTION_NAME,
@@ -81,14 +85,14 @@ export async function getComments(limit: number, skip: number){
         hasMore: skip + comments.length < totalCount,
       },
     };
-  }catch(error){
+  } catch (error) {
     logger.error(`Error getting comments: ${error}`);
     throw error;
   }
 }
 
-export async function updateComment(commentId: string, payload: ValidatedCommentPayload, user: User){
-  try{
+export async function updateComment(commentId: string, payload: ValidatedCommentPayload, user: User) {
+  try {
     const db = await getMongoDB();
     const commentCollection: Collection = db.collection(
       COMMENT_COLLECTION_NAME,
@@ -109,7 +113,7 @@ export async function updateComment(commentId: string, payload: ValidatedComment
       }
     );
 
-    if(!result.modifiedCount){
+    if (!result.modifiedCount) {
       throw new InternalServerError(
         'Error updating comment in mongoDB',
       );
@@ -119,14 +123,14 @@ export async function updateComment(commentId: string, payload: ValidatedComment
       message: `Comment for ${commentId} updated successfully`,
     };
 
-  }catch(error){
+  } catch (error) {
     logger.error(`Error updating comment: ${error}`);
     throw error;
   }
 }
 
-export async function getCommentById(commentId: string){
-  try{
+export async function getCommentById(commentId: string) {
+  try {
     const db = await getMongoDB();
     const commentCollection: Collection = db.collection(
       COMMENT_COLLECTION_NAME,
@@ -136,12 +140,12 @@ export async function getCommentById(commentId: string){
       _id: new ObjectId(commentId),
     });
 
-    if(!result){
+    if (!result) {
       throw new NotFoundError('Comment not found in mongoDB');
     }
 
     return result;
-  }catch(error){
+  } catch (error) {
     logger.error(`Error getting comment by id: ${error}`);
     throw error;
   }
@@ -164,14 +168,14 @@ export async function deleteComment(commentId: string, user: User) {
 
     // user is comment owner or post owner
     const isCommentOwner = comment.userId === user.id;
-    
+
     let isPostOwner = false;
     if (!isCommentOwner) {
       const postCollection: Collection = db.collection(DISASTER_COLLECTION_NAME);
       const post = await postCollection.findOne({
         _id: new ObjectId(comment.postId),
       });
-      
+
       // check it is post owner or not
       if (post) {
         isPostOwner = post.userId === user.id;
@@ -182,16 +186,50 @@ export async function deleteComment(commentId: string, user: User) {
       throw new Error('Unauthorized: Only comment owner or post owner can delete this comment');
     }
 
+    // delete all replies associated with this comment
+    const commentRepliesCollection: Collection = db.collection(
+      COMMENT_REPLY_COLLECTION_NAME
+    );
+
+    const replies = await commentRepliesCollection.find({
+      comment_id: commentId
+    }).toArray();
+
+    // delete media files from Supabase for each reply
+    for (const reply of replies) {
+      if (reply.media) {
+        const replyFilename = reply.media.split('/').pop();
+        if (replyFilename) {
+          try {
+            await deleteCommentReplyFromSupabase(replyFilename);
+          } catch (error) {
+            logger.error(`Error deleting reply media: ${error}`);
+          }
+        }
+      }
+    }
+
+    await commentRepliesCollection.deleteMany({
+      comment_id: commentId
+    });
+
     const result = await commentCollection.deleteOne({
       _id: new ObjectId(commentId),
     });
+
+    if (comment.media) {
+      const filename = comment.media?.split('/')?.pop();
+      if (filename) {
+        await deleteFromSupabase(filename);
+      }
+    }
 
     if (result.deletedCount === 0) {
       throw new InternalServerError('Failed to delete comment');
     }
 
     return {
-      message: 'Comment deleted successfully',
+      message: 'Comment and its replies deleted successfully',
     };
   } catch (error) {
     logger.error(`Error deleting comment: ${error}`);
