@@ -2,7 +2,7 @@ import { getMongoDB } from "@/libs/mongo";
 import logger from "@/logger";
 import { InternalServerError } from "@/utils/errors";
 import { User } from "@prisma/client";
-import { Collection } from "mongodb";
+import { Collection, ObjectId } from "mongodb";
 
 export interface ValidatedCommentPayload{
     post_id: string;
@@ -86,3 +86,42 @@ export async function getComments(limit: number, skip: number){
     throw error;
   }
 }
+
+export async function updateComment(commentId: string, payload: ValidatedCommentPayload, user: User){
+  try{
+    const db = await getMongoDB();
+    const commentCollection: Collection = db.collection(
+      COMMENT_COLLECTION_NAME,
+    );
+
+    const result = await commentCollection.updateOne(
+      { _id: new ObjectId(commentId) },
+      {
+        $set: {
+          userId: user.id,
+          postId: payload.post_id,
+          comment: payload.comment,
+          media: payload.media,
+          systemUpdatedAt: new Date(),
+          commentTimestamp: new Date(),
+          systemCreatedAt: new Date(),
+        },
+      }
+    );
+
+    if(!result.modifiedCount){
+      throw new InternalServerError(
+        'Error updating comment in mongoDB',
+      );
+    }
+
+    return {
+      message: `Comment for ${commentId} updated successfully`,
+    };
+
+  }catch(error){
+    logger.error(`Error updating comment: ${error}`);
+    throw error;
+  }
+}
+  

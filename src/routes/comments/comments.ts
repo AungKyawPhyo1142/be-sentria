@@ -7,5 +7,5 @@ const router = Router();
 
 router.get('/', secureRoute(), commentController.GetComments);
 router.post('/create', secureRoute(), upload.single('commentsImage'), commentController.CreateComment);
-
+router.patch('/update/:id', secureRoute(), upload.single('commentsImage'), commentController.UpdateComment);
 export default router;
