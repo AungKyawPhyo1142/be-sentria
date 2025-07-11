@@ -87,8 +87,8 @@ export async function CreateReport(
             url: uploadResponse.url,
             caption:
               Array.isArray(req.body.imageCaptions) &&
-              req.body.imageCaptions[index]
-                ? req.body.imageCaptions[index]
+              typeof req.body.imageCaptions[index] === 'string'
+                ? (req.body.imageCaptions[index] as string)
                 : `Report image ${index + 1}`,
           };
         });
@@ -119,8 +119,9 @@ export async function CreateReport(
     if (error instanceof z.ZodError) {
       return next(new ValidationError(error.issues));
     }
-    logger.error(`Error creating report: ${error}`);
-    return next(error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error('Error creating report:', err);
+    return next(err);
   }
 }
 
@@ -130,15 +131,19 @@ export async function GetAllDiasterReports(
   next: NextFunction,
 ) {
   try {
-    const { cursor, limit } = req.query;
+    const cursor =
+      typeof req.query.cursor === 'string' ? req.query.cursor : undefined;
+    const limit =
+      typeof req.query.limit === 'string' ? req.query.limit : undefined;
     const reports = await disasterReportService.getAllDisasterReports(
-      cursor as string,
-      limit as string,
+      cursor,
+      limit,
     );
     return res.status(200).json({ reports });
   } catch (error) {
-    logger.error(`Error fetching disaster reports: ${error}`);
-    return next(error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error('Error fetching disaster reports:', err);
+    return next(err);
   }
 }
 
@@ -157,8 +162,9 @@ export async function GetDisasterReportById(
     const report = await disasterReportService.getDisasterReportById(reportId);
     return res.status(200).json({ report });
   } catch (error) {
-    logger.error(`Error fetching disaster report by id: ${error}`);
-    return next(error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error('Error fetching disaster report by id:', err);
+    return next(err);
   }
 }
 
@@ -184,8 +190,9 @@ export async function DeleteDisasterReport(
     );
     return res.status(200).json({ report });
   } catch (error) {
-    logger.error(`Error deleting disaster report: ${error}`);
-    return next(error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error('Error deleting disaster report:', err);
+    return next(err);
   }
 }
 
@@ -226,8 +233,8 @@ export async function UpdateDisasterReport(
             url: uploadResult.url,
             caption:
               Array.isArray(req.body.imageCaptions) &&
-              req.body.imageCaptions[index]
-                ? req.body.imageCaptions[index]
+              typeof req.body.imageCaptions[index] === 'string'
+                ? (req.body.imageCaptions[index] as string)
                 : `Report image ${index + 1}`,
           };
         });
@@ -268,7 +275,8 @@ export async function UpdateDisasterReport(
     if (error instanceof z.ZodError) {
       return next(new ValidationError(error.issues));
     }
-    logger.error(`Error updating disaster report: ${error}`);
-    return next(error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error('Error updating disaster report:', err);
+    return next(err);
   }
 }

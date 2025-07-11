@@ -218,7 +218,7 @@ export async function createDisasterReport(
   }
 }
 
-export async function getAllDisasterReports(cursor: string, limit: string) {
+export async function getAllDisasterReports(cursor?: string, limit?: string) {
   const take = parseInt(limit as string, 10) || 10;
 
   try {
