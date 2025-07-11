@@ -35,7 +35,8 @@ const followUser = async (req: Request, res: Response, next: NextFunction) => {
         status: 'ERROR',
       });
     }
-    return next(error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    return next(err);
   }
 };
 
@@ -63,7 +64,8 @@ const unfollowUser = async (
         status: 'ERROR',
       });
     }
-    return next(error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    return next(err);
   }
 };
 
