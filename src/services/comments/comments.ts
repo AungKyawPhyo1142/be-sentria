@@ -98,6 +98,18 @@ export async function updateComment(commentId: string, payload: ValidatedComment
       COMMENT_COLLECTION_NAME,
     );
 
+    const existingComment = await commentCollection.findOne({
+      _id: new ObjectId(commentId),
+    });
+
+    if (!existingComment) {
+      throw new NotFoundError('Comment not found');
+    }
+
+    if (existingComment.userId !== user.id) {
+      throw new Error('Unauthorized: Only comment owner can update this comment');
+    }
+      
     const result = await commentCollection.updateOne(
       { _id: new ObjectId(commentId) },
       {
