@@ -15,11 +15,8 @@ export const sendEmail = async (
     host: 'gmail',
     service: 'gmail',
     auth: {
-      type: 'OAuth2',
       user: ENV.RESET_PASSWORD_SENDER_EMAIL,
-      // clientId: process.env.GOOGLE_CLIENT_ID,
-      // clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      accessToken: process.env.GOOGLE_ACCESS_TOKEN,
+      pass: ENV.RESET_PASSWORD_SENDER_PASSWORD,
     },
   });
 

@@ -10,6 +10,8 @@ export const ENV = {
   REFRESH_TOKEN_SECRET: process.env.RERESH_TOKEN_SECRET || 'sentria',
   RESET_PASSWORD_SENDER_EMAIL:
     process.env.RESET_PASSWORD_SENDER_EMAIL || 'sentria.platform@gmail.com',
+  RESET_PASSWORD_SENDER_PASSWORD:
+    process.env.RESET_PASSWORD_SENDER_PASSWORD || '',
   FRONTEND_URL: process.env.FRONTEND_URL || 'localhost:8080',
   MONGO_URI: process.env.MONGO_URI,
   RABBITMQ_URL: process.env.RABBITMQ_URL,
