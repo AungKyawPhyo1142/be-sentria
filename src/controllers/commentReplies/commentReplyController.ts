@@ -166,40 +166,44 @@ export async function deleteCommentReply(
   req: Request,
   res: Response,
   next: NextFunction,
-){
-  try{
+) {
+  try {
     const commentReplyId = req.params.id;
-    if(!commentReplyId){
+    if (!commentReplyId) {
       throw new NotFoundError('Comment reply ID is required');
     }
 
     const user = req.user;
-    if(!user){
+    if (!user) {
       throw new AuthenticationError('User is not Authenticated');
     }
 
-    const result = await commentReplyService.deleteCommentReply(commentReplyId, user);
+    const result = await commentReplyService.deleteCommentReply(
+      commentReplyId,
+      user,
+    );
     return res.status(200).json({ result });
-  }catch(error){
+  } catch (error) {
     logger.error(`Error deleting comment reply: ${error}`);
     return next(error);
   }
 }
-  
+
 export async function getCommentReplyById(
   req: Request,
   res: Response,
   next: NextFunction,
-){
-  try{
+) {
+  try {
     const commentReplyId = req.params.id;
-    if(!commentReplyId){
+    if (!commentReplyId) {
       throw new NotFoundError('Comment reply ID is required');
     }
 
-    const result = await commentReplyService.getCommentReplyById(commentReplyId);
+    const result =
+      await commentReplyService.getCommentReplyById(commentReplyId);
     return res.status(200).json({ result });
-  }catch(error){
+  } catch (error) {
     logger.error(`Error getting comment reply: ${error}`);
     return next(error);
   }

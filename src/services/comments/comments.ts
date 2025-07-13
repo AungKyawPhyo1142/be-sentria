@@ -1,12 +1,12 @@
-import { getMongoDB } from "@/libs/mongo";
-import logger from "@/logger";
-import { InternalServerError, NotFoundError } from "@/utils/errors";
-import { User } from "@prisma/client";
-import { Collection, ObjectId } from "mongodb";
-import { DISASTER_COLLECTION_NAME } from "../disasterReports/disasterReports";
-import { deleteFromSupabase } from "./upload";
-import { deleteFromSupabase as deleteCommentReplyFromSupabase } from "../commentReplies/upload";
-import { COMMENT_REPLY_COLLECTION_NAME } from "../commentReplies/commentReplies";
+import { getMongoDB } from '@/libs/mongo';
+import logger from '@/logger';
+import { InternalServerError, NotFoundError } from '@/utils/errors';
+import { User } from '@prisma/client';
+import { Collection, ObjectId } from 'mongodb';
+import { COMMENT_REPLY_COLLECTION_NAME } from '../commentReplies/commentReplies';
+import { deleteFromSupabase as deleteCommentReplyFromSupabase } from '../commentReplies/upload';
+import { DISASTER_COLLECTION_NAME } from '../disasterReports/disasterReports';
+import { deleteFromSupabase } from './upload';
 
 export interface ValidatedCommentPayload {
   post_id: string;
@@ -40,20 +40,15 @@ export async function createComment(
       systemUpdatedAt: now,
     };
 
-    const result = await commentCollection.insertOne(
-      mongoCommentDocument,
-    )
+    const result = await commentCollection.insertOne(mongoCommentDocument);
 
     if (!result.insertedId) {
-      throw new InternalServerError(
-        'Error creating resource in mongoDB',
-      );
+      throw new InternalServerError('Error creating resource in mongoDB');
     }
 
     return {
       message: `Comment for ${payload.post_id} created successfully`,
     };
-
   } catch (error) {
     logger.error(`Error creating comments: ${error}`);
     throw error;
@@ -91,7 +86,11 @@ export async function getComments(limit: number, skip: number) {
   }
 }
 
-export async function updateComment(commentId: string, payload: ValidatedCommentPayload, user: User) {
+export async function updateComment(
+  commentId: string,
+  payload: ValidatedCommentPayload,
+  user: User,
+) {
   try {
     const db = await getMongoDB();
     const commentCollection: Collection = db.collection(
@@ -107,9 +106,11 @@ export async function updateComment(commentId: string, payload: ValidatedComment
     }
 
     if (existingComment.userId !== user.id) {
-      throw new Error('Unauthorized: Only comment owner can update this comment');
+      throw new Error(
+        'Unauthorized: Only comment owner can update this comment',
+      );
     }
-      
+
     const result = await commentCollection.updateOne(
       { _id: new ObjectId(commentId) },
       {
@@ -122,19 +123,16 @@ export async function updateComment(commentId: string, payload: ValidatedComment
           commentTimestamp: new Date(),
           systemCreatedAt: new Date(),
         },
-      }
+      },
     );
 
     if (!result.modifiedCount) {
-      throw new InternalServerError(
-        'Error updating comment in mongoDB',
-      );
+      throw new InternalServerError('Error updating comment in mongoDB');
     }
 
     return {
       message: `Comment for ${commentId} updated successfully`,
     };
-
   } catch (error) {
     logger.error(`Error updating comment: ${error}`);
     throw error;
@@ -183,7 +181,9 @@ export async function deleteComment(commentId: string, user: User) {
 
     let isPostOwner = false;
     if (!isCommentOwner) {
-      const postCollection: Collection = db.collection(DISASTER_COLLECTION_NAME);
+      const postCollection: Collection = db.collection(
+        DISASTER_COLLECTION_NAME,
+      );
       const post = await postCollection.findOne({
         _id: new ObjectId(comment.postId),
       });
@@ -195,17 +195,21 @@ export async function deleteComment(commentId: string, user: User) {
     }
 
     if (!isCommentOwner && !isPostOwner) {
-      throw new Error('Unauthorized: Only comment owner or post owner can delete this comment');
+      throw new Error(
+        'Unauthorized: Only comment owner or post owner can delete this comment',
+      );
     }
 
     // delete all replies associated with this comment
     const commentRepliesCollection: Collection = db.collection(
-      COMMENT_REPLY_COLLECTION_NAME
+      COMMENT_REPLY_COLLECTION_NAME,
     );
 
-    const replies = await commentRepliesCollection.find({
-      comment_id: commentId
-    }).toArray();
+    const replies = await commentRepliesCollection
+      .find({
+        comment_id: commentId,
+      })
+      .toArray();
 
     // delete media files from Supabase for each reply
     for (const reply of replies) {
@@ -222,7 +226,7 @@ export async function deleteComment(commentId: string, user: User) {
     }
 
     await commentRepliesCollection.deleteMany({
-      comment_id: commentId
+      comment_id: commentId,
     });
 
     const result = await commentCollection.deleteOne({
@@ -249,8 +253,12 @@ export async function deleteComment(commentId: string, user: User) {
   }
 }
 
-export async function getCommentsByPostId(postId: string, limit: number, skip: number){
-  try{
+export async function getCommentsByPostId(
+  postId: string,
+  limit: number,
+  skip: number,
+) {
+  try {
     const db = await getMongoDB();
     const commentCollection: Collection = db.collection(
       COMMENT_COLLECTION_NAME,
@@ -259,11 +267,11 @@ export async function getCommentsByPostId(postId: string, limit: number, skip: n
     const totalCount = await commentCollection.countDocuments({ postId });
 
     const comments = await commentCollection
-    .find({postId})
-    .sort({systemCreatedAt: -1})
-    .skip(skip)
-    .limit(limit)
-    .toArray();
+      .find({ postId })
+      .sort({ systemCreatedAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray();
 
     return {
       comments,
@@ -274,7 +282,7 @@ export async function getCommentsByPostId(postId: string, limit: number, skip: n
         hasMore: skip + comments.length < totalCount,
       },
     };
-  }catch(error){
+  } catch (error) {
     logger.error(`Error getting comments by post id: ${error}`);
     throw error;
   }

@@ -50,7 +50,7 @@ export async function CreateComment(
       try {
         req.body.parameters = JSON.parse(req.body.parameters);
       } catch (error) {
-        return next(new BadRequestError('Invalid parameters JSON'));
+        return next(new BadRequestError(`Invalid parameters JSON: ${error}`));
       }
     }
 
@@ -72,7 +72,7 @@ export async function CreateComment(
       }
     }
 
-    let result = await commentService.createComment(servicePayload, user);
+    const result = await commentService.createComment(servicePayload, user);
     return res.status(201).json({ result });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -130,7 +130,7 @@ export async function UpdateComment(
       }
     }
 
-    let result = await commentService.updateComment(
+    const result = await commentService.updateComment(
       commentId,
       servicePayload,
       user,
@@ -189,12 +189,12 @@ export async function DeleteComment(
 ) {
   try {
     const commentId = req.params.id;
-    if(!commentId){
+    if (!commentId) {
       throw new NotFoundError('Comment ID is required');
     }
 
     const user = req.user;
-    if(!user){
+    if (!user) {
       throw new AuthenticationError('User not authenticated');
     }
 
@@ -210,19 +210,23 @@ export async function GetCommentsByPostId(
   req: Request,
   res: Response,
   next: NextFunction,
-){
-  try{
+) {
+  try {
     const postId = req.params.postId;
-    if(!postId){
+    if (!postId) {
       throw new NotFoundError('Post ID is required');
     }
 
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
-    const skip = req.query.skip ? parseInt(req.query.skip as string) : 0; 
+    const skip = req.query.skip ? parseInt(req.query.skip as string) : 0;
 
-    const result = await commentService.getCommentsByPostId(postId, limit, skip);
+    const result = await commentService.getCommentsByPostId(
+      postId,
+      limit,
+      skip,
+    );
     return res.status(200).json({ result });
-  }catch(error){
+  } catch (error) {
     logger.error(`Error getting comments by post id: ${error}`);
     return next(error);
   }

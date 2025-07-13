@@ -1,13 +1,13 @@
 import activityRouter from '@/routes/activity/activity';
 import authRouter from '@/routes/auth/auth';
+import commentRepliesRouter from '@/routes/commentReplies/commentReplies';
+import commentsRouter from '@/routes/comments/comments';
 import exampleRouter from '@/routes/example';
 import followersRouter from '@/routes/followers/followers';
 import goTestRouter from '@/routes/goServiceTest/goServiceTest';
 import reportRouter from '@/routes/reports/reports';
 import resourceRouter from '@/routes/resources/resources';
 import userRouter from '@/routes/user/user';
-import commentsRouter from '@/routes/comments/comments';
-import commentRepliesRouter from '@/routes/commentReplies/commentReplies';
 import { Router } from 'express';
 
 const gateway = Router();
