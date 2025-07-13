@@ -52,3 +52,21 @@ export async function createCommentReply(payload: ValidatedCommentReplyPayload, 
         throw error;
     }
 }
+
+export async function getCommentReplies(commentId: string){
+  try{
+    const db = await getMongoDB();
+    const commentReplyCollection: Collection = db.collection(
+      COMMENT_REPLY_COLLECTION_NAME,
+    );
+
+    const result = await commentReplyCollection.find({
+      commentId: commentId,
+    }).toArray();
+
+    return result;
+  }catch(error){
+    logger.error(`Error getting comment replies: ${error}`);
+    throw error;
+  }
+}

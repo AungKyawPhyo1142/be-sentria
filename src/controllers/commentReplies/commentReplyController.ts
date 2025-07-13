@@ -1,5 +1,5 @@
 import logger from '@/logger';
-import { AuthenticationError, ValidationError } from '@/utils/errors';
+import { AuthenticationError, NotFoundError, ValidationError } from '@/utils/errors';
 import { NextFunction, Request, Response } from 'express';
 import { object, string, z } from 'zod';
 import * as commentReplyService from '@/services/commentReplies/commentReplies';
@@ -21,7 +21,7 @@ export async function createCommentReply(
   try {
     const user = req.user;
     if (!user) {
-      throw new AuthenticationError('User not authenticated');
+      throw new AuthenticationError('User is not authenticated');
     }
 
     const validatedRequestBody = CreateCommentReplySchema.parse(req.body);
@@ -51,6 +51,24 @@ export async function createCommentReply(
     if (error instanceof z.ZodError) {
       return next(new ValidationError(error.issues));
     }
+    return next(error);
+  }
+}
+
+export async function GetCommentReplies(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+){
+  try{
+    const commentId = req.params.commentId;
+    if(!commentId){
+      throw new NotFoundError('Comment ID is required')
+    }
+    const result = await commentReplyService.getCommentReplies(commentId);
+    return res.status(200).json({ result });
+  }catch(error){
+    logger.error(`Error getting comment replies: ${error}`);
     return next(error);
   }
 }
