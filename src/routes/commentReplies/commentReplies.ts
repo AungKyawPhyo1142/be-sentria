@@ -8,6 +8,6 @@ const router = Router();
 router.get('/comment/:commentId',  secureRoute(), commentReplyController.getCommentRepliesByCommentId)
 router.post('/create', secureRoute(), upload.single('commentRepliesImage'), commentReplyController.createCommentReply);
 router.patch('/update/:id', secureRoute(), upload.single('commentRepliesImage'), commentReplyController.updateCommentReply);
-
+router.delete('/delete/:id', secureRoute(), commentReplyController.deleteCommentReply);
 
 export default router;

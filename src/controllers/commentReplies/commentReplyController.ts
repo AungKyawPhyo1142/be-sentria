@@ -109,9 +109,9 @@ export async function updateCommentReply(
       throw new AuthenticationError('User is not authenticated');
     }
 
-    const commentId = req.params.id;
-    if (!commentId) {
-      throw new NotFoundError('Comment ID is required');
+    const commentReplyId = req.params.id;
+    if (!commentReplyId) {
+      throw new NotFoundError('Comment reply ID is required');
     }
 
     if (typeof req.body.parameters === 'string') {
@@ -148,7 +148,7 @@ export async function updateCommentReply(
     }
 
     const result = await commentReplyService.updateCommentReply(
-      commentId,
+      commentReplyId,
       servicePayload,
       user,
     );
@@ -161,3 +161,28 @@ export async function updateCommentReply(
     return next(error);
   }
 }
+
+export async function deleteCommentReply(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+){
+  try{
+    const commentReplyId = req.params.id;
+    if(!commentReplyId){
+      throw new NotFoundError('Comment reply ID is required');
+    }
+
+    const user = req.user;
+    if(!user){
+      throw new AuthenticationError('User is not Authenticated');
+    }
+
+    const result = await commentReplyService.deleteCommentReply(commentReplyId, user);
+    return res.status(200).json({ result });
+  }catch(error){
+    logger.error(`Error deleting comment reply: ${error}`);
+    return next(error);
+  }
+}
+  
