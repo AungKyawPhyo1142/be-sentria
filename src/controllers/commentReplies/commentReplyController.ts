@@ -55,7 +55,7 @@ export async function createCommentReply(
   }
 }
 
-export async function GetCommentReplies(
+export async function getCommentRepliesByCommentId(
   req: Request,
   res: Response,
   next: NextFunction,
