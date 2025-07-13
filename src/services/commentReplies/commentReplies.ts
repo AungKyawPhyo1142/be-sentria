@@ -1,8 +1,8 @@
 import { getMongoDB } from "@/libs/mongo";
 import logger from "@/logger";
 import { User } from "@prisma/client";
-import { Collection } from "mongodb";
-import { InternalServerError } from "@/utils/errors";
+import { Collection, ObjectId } from "mongodb";
+import { InternalServerError, NotFoundError } from "@/utils/errors";
 
 export interface ValidatedCommentReplyPayload{
     post_id: string;
@@ -70,3 +70,56 @@ export async function getCommentReplies(commentId: string){
     throw error;
   }
 }
+
+export async function updateCommentReply(commentId: string, payload: ValidatedCommentReplyPayload, user: User){
+  try{
+    const db = await getMongoDB();
+
+    const commentReplyCollection: Collection = db.collection(
+      COMMENT_REPLY_COLLECTION_NAME,
+    );
+
+    const commentReply = await commentReplyCollection.findOne({
+      _id: new ObjectId(commentId),
+    });
+
+    if(!commentReply){
+      throw new NotFoundError('Comment reply not found in mongoDB');
+    }
+
+    if(commentReply.userId !== user.id){
+      throw new Error('Unauthorized: Only comment reply owner can update this comment reply');
+    }
+
+    const result = await commentReplyCollection.updateOne(
+      { _id: new ObjectId(commentId) },
+      {
+        $set: {
+          userId: user.id,
+          postId: payload.post_id,
+          commentId: payload.comment_id,
+          reply: payload.reply,
+          media: payload.media,
+          systemUpdatedAt: new Date(),
+          commentReplyTimestamp: new Date(),
+          systemCreatedAt: new Date(),
+        },
+      }
+    );
+    
+    if (!result.modifiedCount) {
+      throw new InternalServerError(
+        'Error updating comment reply in mongoDB',
+      );
+    }
+
+    return {
+      message: `Comment reply for post ID of ${payload.post_id} and comment ID of ${payload.comment_id} updated successfully`,
+    };
+    
+  }catch(error){
+    logger.error(`Error updating comment reply: ${error}`);
+    throw error;
+  }
+}
+  
