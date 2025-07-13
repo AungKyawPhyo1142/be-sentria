@@ -205,3 +205,25 @@ export async function DeleteComment(
     return next(error);
   }
 }
+
+export async function GetCommentsByPostId(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+){
+  try{
+    const postId = req.params.postId;
+    if(!postId){
+      throw new NotFoundError('Post ID is required');
+    }
+
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
+    const skip = req.query.skip ? parseInt(req.query.skip as string) : 0; 
+
+    const result = await commentService.getCommentsByPostId(postId, limit, skip);
+    return res.status(200).json({ result });
+  }catch(error){
+    logger.error(`Error getting comments by post id: ${error}`);
+    return next(error);
+  }
+}
