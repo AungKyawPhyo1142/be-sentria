@@ -5,6 +5,7 @@ import * as commentReplyController from '@/controllers/commentReplies/commentRep
 
 const router = Router();
 
+router.get('/:id', secureRoute(), commentReplyController.getCommentReplyById);
 router.get('/comment/:commentId',  secureRoute(), commentReplyController.getCommentRepliesByCommentId)
 router.post('/create', secureRoute(), upload.single('commentRepliesImage'), commentReplyController.createCommentReply);
 router.patch('/update/:id', secureRoute(), upload.single('commentRepliesImage'), commentReplyController.updateCommentReply);

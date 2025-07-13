@@ -186,3 +186,21 @@ export async function deleteCommentReply(
   }
 }
   
+export async function getCommentReplyById(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+){
+  try{
+    const commentReplyId = req.params.id;
+    if(!commentReplyId){
+      throw new NotFoundError('Comment reply ID is required');
+    }
+
+    const result = await commentReplyService.getCommentReplyById(commentReplyId);
+    return res.status(200).json({ result });
+  }catch(error){
+    logger.error(`Error getting comment reply: ${error}`);
+    return next(error);
+  }
+}

@@ -187,4 +187,25 @@ export async function deleteCommentReply(commentId: string, user: User){
     throw error;
   }
 }
+
+export async function getCommentReplyById(commentReplyId: string){
+  try{
+    const db = await getMongoDB();
+    const commentReplyCollection: Collection = db.collection(COMMENT_REPLY_COLLECTION_NAME);
+
+    const result = await commentReplyCollection.findOne({
+      _id: new ObjectId(commentReplyId)
+    })
+
+    if(!result){
+      throw new NotFoundError('Comment reply not found in mongoDB');
+    }
+    
+    return result;
+  }catch(error){
+    logger.error(`Error getting comment reply: ${error}`);
+    throw error;
+  }
+}
+  
   
