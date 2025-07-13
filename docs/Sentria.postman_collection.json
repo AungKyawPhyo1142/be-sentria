@@ -74,12 +74,11 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{HOST}}/auth/verify-email/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEwLCJpYXQiOjE3NDcyMzcwMzIsImV4cCI6MTc0NzMyMzQzMn0.moaxKs48lIiSzhjiDk-pxrWwOhYKoLrn05D97vFv80M",
+              "raw": "{{HOST}}/auth/verify-email/",
               "host": ["{{HOST}}"],
               "path": [
                 "auth",
-                "verify-email",
-                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEwLCJpYXQiOjE3NDcyMzcwMzIsImV4cCI6MTc0NzMyMzQzMn0.moaxKs48lIiSzhjiDk-pxrWwOhYKoLrn05D97vFv80M"
+                "verify-email"
               ]
             }
           },
