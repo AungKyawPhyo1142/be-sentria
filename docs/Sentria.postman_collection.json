@@ -76,10 +76,7 @@
             "url": {
               "raw": "{{HOST}}/auth/verify-email/",
               "host": ["{{HOST}}"],
-              "path": [
-                "auth",
-                "verify-email"
-              ]
+              "path": ["auth", "verify-email"]
             }
           },
           "response": []
