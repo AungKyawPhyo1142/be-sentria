@@ -25,4 +25,7 @@ router.delete(
   reportController.DeleteDisasterReport,
 );
 
+// voting
+router.post('/:id/vote', secureRoute(), reportController.voteOnReport)
+
 export default router;
