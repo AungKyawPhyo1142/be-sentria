@@ -55,6 +55,8 @@ jobs:
       # This is the security check. It fails the job if secrets are found.
       - name: Run Gitleaks secret scan
         uses: gitleaks/gitleaks-action@v2
+        with:
+          config-path: .gitleaks.toml
         env:
           # This allows the action to post comments on pull requests.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

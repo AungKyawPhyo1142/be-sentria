@@ -1,5 +1,7 @@
 import activityRouter from '@/routes/activity/activity';
 import authRouter from '@/routes/auth/auth';
+import commentRepliesRouter from '@/routes/commentReplies/commentReplies';
+import commentsRouter from '@/routes/comments/comments';
 import exampleRouter from '@/routes/example';
 import followersRouter from '@/routes/followers/followers';
 import goTestRouter from '@/routes/goServiceTest/goServiceTest';
@@ -18,5 +20,7 @@ gateway.use('/resource', resourceRouter);
 gateway.use('/goTest', goTestRouter);
 gateway.use('/followers', followersRouter);
 gateway.use('/activity', activityRouter);
+gateway.use('/comments', commentsRouter);
+gateway.use('/commentReplies', commentRepliesRouter);
 
 export default gateway;
