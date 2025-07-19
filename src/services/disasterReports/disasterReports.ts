@@ -17,9 +17,9 @@ import {
 } from '@/utils/errors';
 import { ReportDBStatus, ReportStatus, ReportType, User } from '@prisma/client';
 import { Collection, Document, Filter, ObjectId } from 'mongodb';
-import { deleteFromSupabase } from './upload';
-import { COMMENT_COLLECTION_NAME } from '../comments/comments';
 import { COMMENT_REPLY_COLLECTION_NAME } from '../commentReplies/commentReplies';
+import { COMMENT_COLLECTION_NAME } from '../comments/comments';
+import { deleteFromSupabase } from './upload';
 
 export interface ValidatedDisasterPayload {
   reportName: string;
@@ -414,8 +414,10 @@ export async function deleteDisasterReport(reportId: string, user: User) {
     }
 
     const postgresReportId = reportDocument.postgresReportId;
-    
-    logger.info(`MongoDB disaster report ${reportId} has PostgreSQL ID: ${postgresReportId}`);
+
+    logger.info(
+      `MongoDB disaster report ${reportId} has PostgreSQL ID: ${postgresReportId}`,
+    );
     logger.info(`PostgreSQL ID type: ${typeof postgresReportId}`);
 
     if (!postgresReportId) {
@@ -449,16 +451,26 @@ export async function deleteDisasterReport(reportId: string, user: User) {
     const mediaItems = reportDocument.media || [];
     const imageFilenames = [];
 
-    logger.info(`Deleting comments and replies for disaster report: ${reportId}`);
-    
-    const commentCollection: Collection = db.collection(COMMENT_COLLECTION_NAME);
-    const commentReplyCollection: Collection = db.collection(COMMENT_REPLY_COLLECTION_NAME);
-    
-    const comments = await commentCollection.find({ postId: reportId }).toArray();
-    const commentIds = comments.map(comment => comment._id.toString());
-    
-    logger.info(`Found ${comments.length} comments to delete for disaster report: ${reportId}`);
-    
+    logger.info(
+      `Deleting comments and replies for disaster report: ${reportId}`,
+    );
+
+    const commentCollection: Collection = db.collection(
+      COMMENT_COLLECTION_NAME,
+    );
+    const commentReplyCollection: Collection = db.collection(
+      COMMENT_REPLY_COLLECTION_NAME,
+    );
+
+    const comments = await commentCollection
+      .find({ postId: reportId })
+      .toArray();
+    const commentIds = comments.map((comment) => comment._id.toString());
+
+    logger.info(
+      `Found ${comments.length} comments to delete for disaster report: ${reportId}`,
+    );
+
     for (const comment of comments) {
       if (comment.media) {
         try {
@@ -472,14 +484,16 @@ export async function deleteDisasterReport(reportId: string, user: User) {
         }
       }
     }
-    
+
     if (commentIds.length > 0) {
-      const replies = await commentReplyCollection.find({
-        commentId: { $in: commentIds }
-      }).toArray();
-      
+      const replies = await commentReplyCollection
+        .find({
+          commentId: { $in: commentIds },
+        })
+        .toArray();
+
       logger.info(`Found ${replies.length} comment replies to delete`);
-      
+
       for (const reply of replies) {
         if (reply.media) {
           try {
@@ -493,15 +507,19 @@ export async function deleteDisasterReport(reportId: string, user: User) {
           }
         }
       }
-      
+
       const deleteRepliesResult = await commentReplyCollection.deleteMany({
-        commentId: { $in: commentIds }
+        commentId: { $in: commentIds },
       });
-      
-      logger.info(`Deleted ${deleteRepliesResult.deletedCount} comment replies`);
+
+      logger.info(
+        `Deleted ${deleteRepliesResult.deletedCount} comment replies`,
+      );
     }
-    
-    const deleteCommentsResult = await commentCollection.deleteMany({ postId: reportId });
+
+    const deleteCommentsResult = await commentCollection.deleteMany({
+      postId: reportId,
+    });
     logger.info(`Deleted ${deleteCommentsResult.deletedCount} comments`);
 
     const mongoDeleteResult = await disasterReportCollection.deleteOne({
