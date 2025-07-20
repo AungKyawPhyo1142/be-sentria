@@ -1,5 +1,11 @@
 import logger from '@/logger';
-import { CreatePost } from '@/services/activity/activityFeed';
+import {
+  CreatePost,
+  deletePost,
+  getAllPosts,
+  getPostById,
+  updatePost,
+} from '@/services/activity/activityFeed';
 import { AuthenticationError, ValidationError } from '@/utils/errors';
 import { ActivityType, HelpType } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
@@ -61,5 +67,92 @@ export async function createActivityFeedPost(
     const err = error instanceof Error ? error : new Error(String(error));
     logger.error('Error creating report:', err);
     return next(err);
+  }
+}
+
+export async function getActivityFeedPostById(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { id } = req.params;
+    const post = await getPostById(id);
+    return res.status(200).json({ data: post });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export const UpdateActivityFeedPostSchema =
+  CreateActivityFeedPostSchema.partial();
+
+export async function updateActivityFeedPost(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const user = req.user;
+    if (!user) {
+      throw new AuthenticationError('User not authenticated');
+    }
+
+    const { id: postId } = req.params;
+    const validatedBody = UpdateActivityFeedPostSchema.parse(req.body);
+
+    // Check if there's anything to update
+    if (Object.keys(validatedBody).length === 0) {
+      return res.status(200).json({ message: 'No data provided to update.' });
+    }
+
+    const updatedPost = await updatePost(postId, user.id, validatedBody);
+
+    return res.status(200).json({
+      message: 'Activity feed post updated successfully.',
+      data: updatedPost,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteActivityFeedPost(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const user = req.user;
+    if (!user) {
+      throw new AuthenticationError('User not authenticated');
+    }
+
+    const { id: postId } = req.params;
+    await deletePost(postId, user.id);
+
+    return res
+      .status(200)
+      .json({ message: 'Activity feed post deleted successfully.' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getAllActivityFeedPosts(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    // Get cursor and limit from query parameters, ensuring they are strings
+    const cursor = req.query.cursor as string | undefined;
+    const limit = req.query.limit as string | undefined;
+
+    const result = await getAllPosts({ cursor, limit });
+
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
   }
 }
