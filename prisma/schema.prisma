@@ -31,24 +31,24 @@ model User {
     Report         Report[]
     resources      Resource[]      @relation("GeneratedByUser")
 
-    followings     Follow[] @relation("Followees")
-    followers      Follow[] @relation("Followers")
+    followings Follow[] @relation("Followees")
+    followers  Follow[] @relation("Followers")
 
-    activities Activity[] @relation("GeneratedActivities")
+    activityFFeedPosts ActivityFeedPost[]
 }
 
 model Follow {
-  followerId Int
-  followingId Int
+    followerId  Int
+    followingId Int
 
-  follower   User   @relation("Followees", fields: [followerId], references: [id], onDelete: Cascade)
-  following  User   @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+    follower  User @relation("Followees", fields: [followerId], references: [id], onDelete: Cascade)
+    following User @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
 
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
 
-  @@id([followerId, followingId])
-  @@index([followingId])
+    @@id([followerId, followingId])
+    @@index([followingId])
 }
 
 enum ReportStatus {
@@ -169,22 +169,22 @@ enum ResourceStatus {
 }
 
 model Resource {
-    id          String         @id @default(cuid())
-    name        String         // Added name field
+    id            String         @id @default(cuid())
+    name          String // Added name field
     generatedById Int?
-    generatedBy   User?        @relation("GeneratedByUser", fields: [generatedById], references: [id], onDelete: SetNull)
-    location    Json?          // Geometry type for PostgreSQL - now optional
-    description String?        @db.Text // Now optional
-    resourceType ResourceType
-    status      ResourceStatus @default(PENDING)
-    
-    externalStorageId String?  @unique // mongoDB document id
-    errorMessage     String?
-    
-    created_at   DateTime      @default(now())
-    updated_at   DateTime      @updatedAt
+    generatedBy   User?          @relation("GeneratedByUser", fields: [generatedById], references: [id], onDelete: SetNull)
+    location      Json? // Geometry type for PostgreSQL - now optional
+    description   String?        @db.Text // Now optional
+    resourceType  ResourceType
+    status        ResourceStatus @default(PENDING)
+
+    externalStorageId String? @unique // mongoDB document id
+    errorMessage      String?
+
+    created_at   DateTime  @default(now())
+    updated_at   DateTime  @updatedAt
     completed_at DateTime?
-    
+
     @@index([generatedById])
     @@index([status])
     @@index([resourceType])
@@ -192,38 +192,49 @@ model Resource {
 }
 
 enum ActivityType {
-  SHELTER
-  WATER
-  FOOD
-  WIFI
+    REQUEST
+    OFFER
 }
 
-enum ActivityStatus {
-  NEED_HELP
-  OFFERING_HELP
+enum HelpType {
+    FOOD
+    WATER
+    SHELTER
+    WIFI
 }
 
-model Activity {
-  id              String          @id @default(cuid())
-  name            String
-  generatedById   Int?
-  generatedBy     User?           @relation("GeneratedActivities", fields: [generatedById], references: [id], onDelete: SetNull)
-  location        Json?
-  description     String?         @db.Text
-  activityType    ActivityType
-  status          ActivityStatus  @default(NEED_HELP)
+model ActivityFeedPost {
+    id           String       @id @default(cuid())
+    activityType ActivityType
+    description  String       @db.Text
 
-  externalStorageId String?       @unique
-  errorMessage       String?
+    city      String
+    country   String
+    latitude  Float
+    longitude Float
 
-  created_at       DateTime       @default(now())
-  updated_at       DateTime       @updatedAt
-  completed_at     DateTime?
+    isActive  Boolean @default(true)
+    isDeleted Boolean @default(false)
 
-  @@index([generatedById])
-  @@index([status])
-  @@index([activityType])
-  @@index([externalStorageId])
+    postedById Int
+    postedBy   User @relation(fields: [postedById], references: [id], onDelete: Cascade)
+
+    helpItems HelpItem[]
+
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+    // TODO: add geospatial index for location
+
+    @@index([postedById])
 }
 
+model HelpItem {
+    id       String   @id @default(cuid())
+    helpType HelpType
+    quantity Int?
 
+    activityFeedPostId String
+    post               ActivityFeedPost @relation(fields: [activityFeedPostId], references: [id], onDelete: Cascade)
+
+    @@index([activityFeedPostId])
+}
