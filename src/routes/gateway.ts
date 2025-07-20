@@ -15,11 +15,11 @@ const gateway = Router();
 gateway.use('/example', exampleRouter);
 gateway.use('/auth', authRouter);
 gateway.use('/report', reportRouter);
+gateway.use('/activity', activityRouter);
 gateway.use('/users', userRouter);
 gateway.use('/resource', resourceRouter);
 gateway.use('/goTest', goTestRouter);
 gateway.use('/followers', followersRouter);
-gateway.use('/activity', activityRouter);
 gateway.use('/comments', commentsRouter);
 gateway.use('/commentReplies', commentRepliesRouter);
 
