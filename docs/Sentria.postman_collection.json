@@ -911,6 +911,33 @@
       ]
     },
     {
+      "name": "Reverse Geocoding",
+      "item": [
+        {
+          "name": "Reverse Geocoding",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"lat\": 16.0544,\n    \"lng\": 108.2022\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/location/reverse-geocode",
+              "host": ["{{HOST}}"],
+              "path": ["location", "reverse-geocode"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Example (Get Random Number)",
       "request": {
         "method": "GET",

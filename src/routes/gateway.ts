@@ -7,12 +7,14 @@ import followersRouter from '@/routes/followers/followers';
 import goTestRouter from '@/routes/goServiceTest/goServiceTest';
 import reportRouter from '@/routes/reports/reports';
 import resourceRouter from '@/routes/resources/resources';
+import locationRouter from '@/routes/reverse-geocode/location';
 import userRouter from '@/routes/user/user';
 import { Router } from 'express';
 
 const gateway = Router();
 
 gateway.use('/example', exampleRouter);
+gateway.use('/location', locationRouter);
 gateway.use('/auth', authRouter);
 gateway.use('/report', reportRouter);
 gateway.use('/activity', activityRouter);
