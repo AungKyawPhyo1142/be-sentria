@@ -235,4 +235,42 @@ const resendEmail = async (email: string) => {
   }
 };
 
-export { registerUser, loginUser, auth, verifyEmail, resendEmail };
+const forgotPassword = async (email:string) => {
+  try{
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new NotFoundError('Account not found with this email');
+    }
+
+    const resetToken = jwt.sign({ userId: user.id }, ENV.JWT_SECRET, {
+      expiresIn: '24hr',
+    });
+    const resetURL = `${ENV.FRONTEND_URL}/auth/reset-password/${resetToken}`;
+
+    const data = {
+      name: `${user.firstName} ${user.lastName}`,
+      email: email,
+      resetLink: resetURL,
+      currentYear: new Date().getFullYear(),
+    };
+    
+    await sendEmail(
+      'email_reset_password_template_v1',
+      'email_reset_password',
+      [email],
+      'Sentria - Reset Password',
+      data,
+    );
+    return {
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      username: user.username,
+    };
+  }catch(error){
+    logger.error('Error forgot password', error);
+    throw error;
+  }
+}
+
+export { registerUser, loginUser, auth, verifyEmail, resendEmail , forgotPassword };

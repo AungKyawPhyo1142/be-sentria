@@ -14,6 +14,10 @@ const registerUserSchema = object({
   country: string(),
 });
 
+const forgotPasswordSchema = object({
+  email: string().email(),
+})
+
 const loginSchema = object({
   email: string().email(),
   password: string().min(8),
@@ -120,4 +124,20 @@ const resendEmail = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-export { registerUser, loginUser, auth, verifyEmail, resendEmail };
+const forgotPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try{
+    const {email} = forgotPasswordSchema.parse(req.body);
+    await userService.forgotPassword(email);
+    return res.status(200).json({ message: 'forgot password email sent successfully' });
+  }catch(error){
+    if(error instanceof ZodError){
+      return next(new ValidationError(error.issues));
+    }
+    return next(error);
+  }
+}
+export { registerUser, loginUser, auth, verifyEmail, resendEmail, forgotPassword };
