@@ -1,5 +1,6 @@
+import logger from '@/logger';
 import * as userService from '@/services/auth/user';
-import { ValidationError } from '@/utils/errors';
+import { AuthenticationError, ValidationError } from '@/utils/errors';
 import { NextFunction, Request, Response } from 'express';
 import { ZodError, boolean, object, string } from 'zod';
 
@@ -27,6 +28,10 @@ const loginSchema = object({
 const resendEmailSchema = object({
   email: string().email(),
 });
+
+const resetPasswordSchema = object({
+  password: string().min(8),
+})
 
 const auth = (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -140,4 +145,30 @@ const forgotPassword = async (
     return next(error);
   }
 }
-export { registerUser, loginUser, auth, verifyEmail, resendEmail, forgotPassword };
+
+const resetPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try{
+    const {token} = req.params;
+    const {password} = resetPasswordSchema.parse(req.body);
+
+    if(!token){
+      throw new AuthenticationError('Invalid token');
+    }
+
+    await userService.resetPassword(token, password);
+    return res.status(200).json({ message: 'Password reset successfully' });
+  }catch(error){
+    logger.error('Error reset password', error);
+    if(error instanceof ZodError){
+      return next(new ValidationError(error.issues));
+    }
+    return next(error);
+  }
+
+}
+
+export { registerUser, loginUser, auth, verifyEmail, resendEmail, forgotPassword , resetPassword};

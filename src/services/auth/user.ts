@@ -246,7 +246,7 @@ const forgotPassword = async (email:string) => {
       expiresIn: '24hr',
     });
     const resetURL = `${ENV.FRONTEND_URL}/auth/reset-password/${resetToken}`;
-
+    
     const data = {
       name: `${user.firstName} ${user.lastName}`,
       email: email,
@@ -273,4 +273,32 @@ const forgotPassword = async (email:string) => {
   }
 }
 
-export { registerUser, loginUser, auth, verifyEmail, resendEmail , forgotPassword };
+const resetPassword = async (token: string, password: string) => {
+  try{
+     const decoded = jwt.verify(token, ENV.JWT_SECRET) as { userId: number };
+     const user = await prisma.user.findUnique({ where: {id: decoded.userId}});
+
+     if(!user){
+      throw new NotFoundError('User not found');
+     }
+
+     const passwordHash = bcrypt.hashSync(password, 10);
+
+     await prisma.user.update({
+      where: {id: decoded.userId},
+      data: {password: passwordHash},
+     });
+
+     return {
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      username: user.username,
+     };
+  }catch(error){
+    logger.error('Error reset password', error);
+    throw error;
+  }
+}
+
+export { registerUser, loginUser, auth, verifyEmail, resendEmail , forgotPassword, resetPassword };
