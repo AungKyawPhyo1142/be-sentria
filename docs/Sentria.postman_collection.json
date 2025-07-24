@@ -1,849 +1,981 @@
 {
-	"info": {
-		"_postman_id": "6e1b2700-222b-4a00-a3de-f4f605bd3409",
-		"name": "Sentria",
-		"description": "- inside variables, make sure HOST is pointing to the port number your backend is running",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "28564017"
-	},
-	"item": [
-		{
-			"name": "Auth",
-			"item": [
-				{
-					"name": "Test Auth",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{HOST}}/auth",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"auth"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Register",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"email\": \"test+15@gmail.com\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"username\": \"johndoe15\",\n    \"password\": \"Password@123\",\n    \"birthday\": \"1990-01-01\",\n    \"country\": \"US\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{HOST}}/auth/register",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"auth",
-								"register"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Login",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"email\": \"test+15@gmail.com\",\n    \"password\": \"Password@123\"\n\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{HOST}}/auth/login",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"auth",
-								"login"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Verify Email",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{HOST}}/auth/verify-email/[PUT TOKEN HERE]",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"auth",
-								"verify-email",
-								"[PUT TOKEN HERE]"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Resend Verification Email",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"email\": \"test+15@gmail.com\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{HOST}}/auth/resend-email",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"auth",
-								"resend-email"
-							]
-						}
-					},
-					"response": []
-				}
-			],
-			"description": "This folder is for authorization related endpoints"
-		},
-		{
-			"name": "Websocket",
-			"item": [
-				{
-					"name": "Send test update to websocket",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"reportId\": \"cmbex5z1z0001itp33afrj3hi\",\n    \"factCheckOverallPercentage\": 12,\n    \"status\": \"update irl\",\n    \"narrative\": \"update irl\",\n    \"lastCalculatedAt\": \"\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{HOST}}/example/test-websocket",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"example",
-								"test-websocket"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Resource",
-			"item": [
-				{
-					"name": "Create",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"name\": \"Emergency Shelter Location\",\n  \"resourceType\": \"SURVIVAL\",\n  \"parameters\": {\n    \"description\": \"This is a temporary shelter providing food, water, and basic medical supplies for those affected by the recent flooding.\",\n    \"location\": {\n      \"city\": \"Bangkok\",\n      \"country\": \"Thailand\",\n      \"latitude\": 13.7563,\n      \"longitude\": 100.5018\n    },\n    \"address\": {\n      \"street\": \"123 Sukhumvit Road\",\n      \"district\": \"Watthana\",\n      \"fullAddress\": \"123 Sukhumvit Road, Watthana, Bangkok 10110\"\n    }\n  }\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{HOST}}/resource/create",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"resource",
-								"create"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Update",
-					"request": {
-						"method": "PATCH",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"name\": \"Emergency Shelter Locations\",\n  \"resourceType\": \"HOTLINE\",\n  \"parameters\": {\n    \"description\": \"Updated list of emergency shelter locations in Yangon\",\n    \"location\": {\n      \"city\": \"Yangon\",\n      \"country\": \"Myanmar\",\n      \"latitude\": 16.8409,\n      \"longitude\": 96.1735\n    },\n    \"address\": {\n      \"street\": \"123 Main Street\",\n      \"district\": \"Downtown\",\n      \"fullAddress\": \"123 Main Street, Downtown, Yangon\"\n    },\n    \"media\": [\n      {\n        \"type\": \"IMAGE\",\n        \"url\": \"https://example.com/images/shelter-map.jpg\",\n        \"caption\": \"Map of emergency shelters\"\n      }\n    ]\n  }\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{HOST}}/resource/update/cmbweonrm0000lx4my8wk85o1",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"resource",
-								"update",
-								"cmbweonrm0000lx4my8wk85o1"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get All Resources",
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"method": "GET",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"name\": \"Emergency Shelter Location\",\n  \"resourceType\": \"SURVIVAL\",\n  \"parameters\": {\n    \"description\": \"This is a temporary shelter providing food, water, and basic medical supplies for those affected by the recent flooding.\",\n    \"location\": {\n      \"city\": \"Bangkok\",\n      \"country\": \"Thailand\",\n      \"latitude\": 13.7563,\n      \"longitude\": 100.5018\n    },\n    \"address\": {\n      \"street\": \"123 Sukhumvit Road\",\n      \"district\": \"Watthana\",\n      \"fullAddress\": \"123 Sukhumvit Road, Watthana, Bangkok 10110\"\n    }\n  }\n}"
-						},
-						"url": {
-							"raw": "{{HOST}}/resource/",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"resource",
-								""
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Delete Resource",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{HOST}}/resource/delete/684d98d46c6beb833664f168",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"resource",
-								"delete",
-								"684d98d46c6beb833664f168"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get Resource By ID",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{HOST}}/resource/68584683eb3133d271edd4cb",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"resource",
-								"68584683eb3133d271edd4cb"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Reports",
-			"item": [
-				{
-					"name": "Create a disaster report",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"reportType\": \"DISASTER_INCIDENT\",\n  \"name\": \"Earthquake in Mandalay - 2025-03-28\",\n  \"parameters\": {\n    \"title\": \"Earthquake in Mandalay\",\n    \"description\": \"A major earthquake happendin Mandalay. Might have severe impact\",\n    \"incidentType\": \"EARTHQUAKE\",\n    \"severity\": \"SEVERE\",\n    \"incidentTimestamp\": \"2025-03-28T10:00:00Z\",\n    \"location\": {\n      \"city\": \"Mandalay\",\n      \"country\": \"Myanmar\",\n      \"latitude\": 21.9588,\n      \"longitude\": 96.0891\n    },\n    \"address\": {\n      \"district\": \"Mandalay\",\n      \"fullAddress\": \"Mandalay, Myanmar\"\n    },\n    \"media\": [\n      {\n        \"type\": \"IMAGE\",\n        \"url\": \"https://unsplash.com/photos/gray-and-yellow-concrete-buildings-under-white-clouds-during-daytime-q5DNjRaAJo4\",\n        \"caption\": \"Some impact in Mandalay\"\n      }\n    ]\n  }\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{HOST}}/report/create",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"report",
-								"create"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get a disaster report by reportId",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{HOST}}/report/cmb8504mp0001itb0ocwzw5h1",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"report",
-								"cmb8504mp0001itb0ocwzw5h1"
-							],
-							"query": [
-								{
-									"key": "reportId",
-									"value": "cmatmy46m0001it2u37whonhi",
-									"disabled": true
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "get all disaster reports",
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"method": "GET",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"reportType\": \"DISASTER_INCIDENT\",\n  \"name\": \"Earthquake in Mandalay - 2025-05-18\",\n  \"parameters\": {\n    \"title\": \"Earthquake in Mandalay\",\n    \"description\": \"A minor earthquake happend around 3.30PM in Mandalay. Might have slight impact\",\n    \"incidentType\": \"EARTHQUAKE\",\n    \"severity\": \"MINOR\",\n    \"incidentTimestamp\": \"2025-05-18T15:30:00.000Z\",\n    \"location\": {\n      \"city\": \"Mandalay\",\n      \"country\": \"Myanmar\",\n      \"latitude\": 21.9588,\n      \"longitude\": 96.0891\n    },\n    \"address\": {\n      \"district\": \"Mandalay\",\n      \"fullAddress\": \"Mandalay, Myanmar\"\n    },\n    \"media\": [\n      {\n        \"type\": \"IMAGE\",\n        \"url\": \"https://unsplash.com/photos/gray-and-yellow-concrete-buildings-under-white-clouds-during-daytime-q5DNjRaAJo4\",\n        \"caption\": \"Some impact in Mandalay\"\n      }\n    ]\n  }\n}"
-						},
-						"url": {
-							"raw": "{{HOST}}/report",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"report"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "RabbitMQ",
-			"item": [
-				{
-					"name": "Send message to Queue",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"message\": \"Report creation 1\",\n    \"data\": {\n        \"testId\": 126,\n        \"payload\": \"data...\"\n    }\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{HOST}}/example/test-rabbitmq",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"example",
-								"test-rabbitmq"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Send Bulk Test Reports",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{HOST}}/goTest/send-bulk-test-jobs",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"goTest",
-								"send-bulk-test-jobs"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "User",
-			"item": [
-				{
-					"name": "User Details By ID",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{HOST}}/users/1",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"users",
-								"1"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Update",
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "PATCH",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"id\" : 1,\n    \"country\": \"Bangkok\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{HOST}}/users/1",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"users",
-								"1"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Soft Delete",
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{HOST}}/users/1",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"users",
-								"1"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Recover",
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "PATCH",
-						"header": [],
-						"url": {
-							"raw": "{{HOST}}/users/1/recover",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"users",
-								"1",
-								"recover"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Disaster Report",
-			"item": [
-				{
-					"name": "Get Reports",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{HOST}}/report",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"report"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Create Report",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "reportImage",
-									"type": "file",
-									"src": [
-										"postman-cloud:///1eff35d6-6838-4c60-962c-b7b5c7b6bb46",
-										"postman-cloud:///1eff1043-7b0e-4dc0-a28d-5f67d1b48fa7"
-									]
-								},
-								{
-									"key": "imageCaption",
-									"value": "\"\"",
-									"type": "text"
-								},
-								{
-									"key": "reportType",
-									"value": "DISASTER_INCIDENT",
-									"type": "text"
-								},
-								{
-									"key": "name",
-									"value": "Major Earthquake in Tokyo - TestCloud",
-									"type": "text"
-								},
-								{
-									"key": "parameters",
-									"value": "{\"description\":\"A 6.5 magnitude earthquake struck Tokyo causing moderate damage to infrastructure and several injuries.\",\"incidentType\":\"EARTHQUAKE\",\"severity\":\"MODERATE\",\"incidentTimestamp\":\"2025-06-17T08:30:00Z\",\"location\":{\"city\":\"Tokyo\",\"country\":\"Japan\",\"latitude\":35.6895,\"longitude\":139.6917},\"media\":[]}",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "{{HOST}}/report/create",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"report",
-								"create"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get Report By ID",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{HOST}}/report/683d757879ad323ffbf27f3e",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"report",
-								"683d757879ad323ffbf27f3e"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Delete Report",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{HOST}}/report/delete/683d757879ad323ffbf27f3e",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"report",
-								"delete",
-								"683d757879ad323ffbf27f3e"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Update Report",
-					"request": {
-						"method": "PATCH",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"reportType\": \"DISASTER_INCIDENT\",\n  \"name\": \"Updated: Earthquake in Mandalay - 2025-03-28\",\n  \"parameters\": {\n    \"description\": \"UPDATED: A major earthquake occurred in Mandalay with magnitude 6.7. Several buildings damaged and evacuation in progress.\",\n    \"incidentType\": \"EARTHQUAKE\",\n    \"severity\": \"SEVERE\",\n    \"incidentTimestamp\": \"2025-03-28T10:00:00Z\",\n    \"location\": {\n      \"city\": \"Mandalay\",\n      \"country\": \"Myanmar\",\n      \"latitude\": 21.9588,\n      \"longitude\": 96.0891\n    },\n    \"media\": []\n  }\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{HOST}}/report/update/6851345074e71db7781642fc",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"report",
-								"update",
-								"6851345074e71db7781642fc"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Activity",
-			"item": [
-				{
-					"name": "Create Activity",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"name\": \"New Name\",\n  \"activityType\": \"SHELTER\",\n  \"parameters\": {\n    \"location\": {\n      \"city\": \"Bangkok\",\n      \"country\": \"Thailand\",\n      \"latitude\": 13.7563,\n      \"longitude\": 100.5018\n    },\n    \"address\": {\n      \"street\": \"123 Sukhumvit Rd\",\n      \"district\": \"Khlong Toei\",\n      \"fullAddress\": \"123 Sukhumvit Rd, Khlong Toei, Bangkok, Thailand\"\n    },\n    \"description\": \"Providing temporary shelter and support for displaced families.\"\n  }\n}\n",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{HOST}}/activity/create",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"activity",
-								"create"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Update Activity",
-					"request": {
-						"method": "PATCH",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"name\": \"Updated Activity Name\",\n  \"activityType\": \"WIFI\", \n  \"status\": \"OFFERING_HELP\",  \n  \"parameters\": {\n    \"description\": \"Updated description of the activity.\",\n    \"location\": {\n      \"city\": \"Bangkok\",\n      \"country\": \"Thailand\",\n      \"latitude\": 13.7563,\n      \"longitude\": 100.5018\n    },\n    \"address\": {\n      \"street\": \"123 Sukhumvit\",\n      \"district\": \"Khlong Toei\",\n      \"fullAddress\": \"123 Sukhumvit, Khlong Toei, Bangkok\"\n    }\n  }\n}\n",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{HOST}}/activity/update/cmcq9j7hn0000pw4avz9z18yj",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"activity",
-								"update",
-								"cmcq9j7hn0000pw4avz9z18yj"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get Activity",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{HOST}}/activity/",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"activity",
-								""
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get by ID Activity",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{HOST}}/activity/686924aba07290d1e460121c",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"activity",
-								"686924aba07290d1e460121c"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Delete Activity",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{HOST}}/activity/delete/686924aba07290d1e460121c",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"activity",
-								"delete",
-								"686924aba07290d1e460121c"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Notifications",
-			"item": [
-				{
-					"name": "Test Notification with static location",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"lat\": 16.1,\n    \"lon\": 108.3,\n    \"mag\": 5.2,\n    \"place\": \"Test Quake 50km off the coast of Da Nang\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{HOST}}/example/debug/trigger-quake-alert",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"example",
-								"debug",
-								"trigger-quake-alert"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Example (Get Random Number)",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:3000/example",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "3000",
-					"path": [
-						"example"
-					]
-				}
-			},
-			"response": []
-		}
-	],
-	"event": [
-		{
-			"listen": "prerequest",
-			"script": {
-				"type": "text/javascript",
-				"packages": {},
-				"exec": [
-					""
-				]
-			}
-		},
-		{
-			"listen": "test",
-			"script": {
-				"type": "text/javascript",
-				"packages": {},
-				"exec": [
-					""
-				]
-			}
-		}
-	],
-	"variable": [
-		{
-			"key": "HOST",
-			"value": "http://localhost:3000",
-			"type": "string"
-		}
-	]
+  "info": {
+    "_postman_id": "6e1b2700-222b-4a00-a3de-f4f605bd3409",
+    "name": "Sentria",
+    "description": "- inside variables, make sure HOST is pointing to the port number your backend is running",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "28564017"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Test Auth",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/auth",
+              "host": ["{{HOST}}"],
+              "path": ["auth"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"aungkyawphyo142.edu+699@gmail.com\",\n    \"firstName\": \"Aung\",\n    \"lastName\": \"Kyaw\",\n    \"username\": \"aungphyo699\",\n    \"password\": \"Password@123\",\n    \"birthday\": \"1990-01-01\",\n    \"country\": \"US\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/auth/register",
+              "host": ["{{HOST}}"],
+              "path": ["auth", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"aungkyawphyo142.edu+699@gmail.com\",\n    \"password\": \"Password@123\"\n\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/auth/login",
+              "host": ["{{HOST}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/auth/verify-email/[PUT TOKEN HERE]",
+              "host": ["{{HOST}}"],
+              "path": ["auth", "verify-email", "[PUT TOKEN HERE]"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Resend Verification Email",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"test+15@gmail.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/auth/resend-email",
+              "host": ["{{HOST}}"],
+              "path": ["auth", "resend-email"]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "This folder is for authorization related endpoints"
+    },
+    {
+      "name": "Websocket",
+      "item": [
+        {
+          "name": "Send test update to websocket",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"reportId\": \"cmbex5z1z0001itp33afrj3hi\",\n    \"factCheckOverallPercentage\": 12,\n    \"status\": \"update irl\",\n    \"narrative\": \"update irl\",\n    \"lastCalculatedAt\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/example/test-websocket",
+              "host": ["{{HOST}}"],
+              "path": ["example", "test-websocket"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Resource",
+      "item": [
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Emergency Shelter Location\",\n  \"resourceType\": \"SURVIVAL\",\n  \"parameters\": {\n    \"description\": \"This is a temporary shelter providing food, water, and basic medical supplies for those affected by the recent flooding.\",\n    \"location\": {\n      \"city\": \"Bangkok\",\n      \"country\": \"Thailand\",\n      \"latitude\": 13.7563,\n      \"longitude\": 100.5018\n    },\n    \"address\": {\n      \"street\": \"123 Sukhumvit Road\",\n      \"district\": \"Watthana\",\n      \"fullAddress\": \"123 Sukhumvit Road, Watthana, Bangkok 10110\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/resource/create",
+              "host": ["{{HOST}}"],
+              "path": ["resource", "create"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Emergency Shelter Locations\",\n  \"resourceType\": \"HOTLINE\",\n  \"parameters\": {\n    \"description\": \"Updated list of emergency shelter locations in Yangon\",\n    \"location\": {\n      \"city\": \"Yangon\",\n      \"country\": \"Myanmar\",\n      \"latitude\": 16.8409,\n      \"longitude\": 96.1735\n    },\n    \"address\": {\n      \"street\": \"123 Main Street\",\n      \"district\": \"Downtown\",\n      \"fullAddress\": \"123 Main Street, Downtown, Yangon\"\n    },\n    \"media\": [\n      {\n        \"type\": \"IMAGE\",\n        \"url\": \"https://example.com/images/shelter-map.jpg\",\n        \"caption\": \"Map of emergency shelters\"\n      }\n    ]\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/resource/update/cmbweonrm0000lx4my8wk85o1",
+              "host": ["{{HOST}}"],
+              "path": ["resource", "update", "cmbweonrm0000lx4my8wk85o1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Resources",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Emergency Shelter Location\",\n  \"resourceType\": \"SURVIVAL\",\n  \"parameters\": {\n    \"description\": \"This is a temporary shelter providing food, water, and basic medical supplies for those affected by the recent flooding.\",\n    \"location\": {\n      \"city\": \"Bangkok\",\n      \"country\": \"Thailand\",\n      \"latitude\": 13.7563,\n      \"longitude\": 100.5018\n    },\n    \"address\": {\n      \"street\": \"123 Sukhumvit Road\",\n      \"district\": \"Watthana\",\n      \"fullAddress\": \"123 Sukhumvit Road, Watthana, Bangkok 10110\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{HOST}}/resource/",
+              "host": ["{{HOST}}"],
+              "path": ["resource", ""]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Resource",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/resource/delete/684d98d46c6beb833664f168",
+              "host": ["{{HOST}}"],
+              "path": ["resource", "delete", "684d98d46c6beb833664f168"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Resource By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/resource/68584683eb3133d271edd4cb",
+              "host": ["{{HOST}}"],
+              "path": ["resource", "68584683eb3133d271edd4cb"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "RabbitMQ",
+      "item": [
+        {
+          "name": "Send message to Queue",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"message\": \"Report creation 1\",\n    \"data\": {\n        \"testId\": 126,\n        \"payload\": \"data...\"\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/example/test-rabbitmq",
+              "host": ["{{HOST}}"],
+              "path": ["example", "test-rabbitmq"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Bulk Test Reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/goTest/send-bulk-test-jobs",
+              "host": ["{{HOST}}"],
+              "path": ["goTest", "send-bulk-test-jobs"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "User Details By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/users/1",
+              "host": ["{{HOST}}"],
+              "path": ["users", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"id\" : 1,\n    \"country\": \"Bangkok\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/users/1",
+              "host": ["{{HOST}}"],
+              "path": ["users", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Soft Delete",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/users/1",
+              "host": ["{{HOST}}"],
+              "path": ["users", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Recover",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/users/1/recover",
+              "host": ["{{HOST}}"],
+              "path": ["users", "1", "recover"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Follow",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"followingId\": 1\n\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/followers/follow",
+              "host": ["{{HOST}}"],
+              "path": ["followers", "follow"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Unfollow",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"followingId\": 1\n\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/followers/unfollow",
+              "host": ["{{HOST}}"],
+              "path": ["followers", "unfollow"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Disaster Report",
+      "item": [
+        {
+          "name": "voting",
+          "item": [
+            {
+              "name": "vote",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"voteType\": \"UPVOTE\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{HOST}}/report/cmcyidznx0001its7egt2c8s8/vote",
+                  "host": ["{{HOST}}"],
+                  "path": ["report", "cmcyidznx0001its7egt2c8s8", "vote"],
+                  "query": [
+                    {
+                      "key": "",
+                      "value": null,
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Get Reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/report",
+              "host": ["{{HOST}}"],
+              "path": ["report"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Report",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "reportImage",
+                  "type": "file",
+                  "src": [
+                    "postman-cloud:///1eff35d6-6838-4c60-962c-b7b5c7b6bb46",
+                    "postman-cloud:///1eff1043-7b0e-4dc0-a28d-5f67d1b48fa7"
+                  ]
+                },
+                {
+                  "key": "imageCaption",
+                  "value": "\"\"",
+                  "type": "text"
+                },
+                {
+                  "key": "reportType",
+                  "value": "DISASTER_INCIDENT",
+                  "type": "text"
+                },
+                {
+                  "key": "name",
+                  "value": "Major Earthquake in Tokyo - TestCloud",
+                  "type": "text"
+                },
+                {
+                  "key": "parameters",
+                  "value": "{\"description\":\"A 6.5 magnitude earthquake struck Tokyo causing moderate damage to infrastructure and several injuries.\",\"incidentType\":\"EARTHQUAKE\",\"severity\":\"MODERATE\",\"incidentTimestamp\":\"2025-06-17T08:30:00Z\",\"location\":{\"city\":\"Tokyo\",\"country\":\"Japan\",\"latitude\":35.6895,\"longitude\":139.6917},\"media\":[]}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{HOST}}/report/create",
+              "host": ["{{HOST}}"],
+              "path": ["report", "create"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Report By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/report/687697cdc4dd10d9773a5c51",
+              "host": ["{{HOST}}"],
+              "path": ["report", "687697cdc4dd10d9773a5c51"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Report",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/report/delete/683d757879ad323ffbf27f3e",
+              "host": ["{{HOST}}"],
+              "path": ["report", "delete", "683d757879ad323ffbf27f3e"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Report",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reportType\": \"DISASTER_INCIDENT\",\n  \"name\": \"Updated: Earthquake in Mandalay - 2025-03-28\",\n  \"parameters\": {\n    \"description\": \"UPDATED: A major earthquake occurred in Mandalay with magnitude 6.7. Several buildings damaged and evacuation in progress.\",\n    \"incidentType\": \"EARTHQUAKE\",\n    \"severity\": \"SEVERE\",\n    \"incidentTimestamp\": \"2025-03-28T10:00:00Z\",\n    \"location\": {\n      \"city\": \"Mandalay\",\n      \"country\": \"Myanmar\",\n      \"latitude\": 21.9588,\n      \"longitude\": 96.0891\n    },\n    \"media\": []\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/report/update/6851345074e71db7781642fc",
+              "host": ["{{HOST}}"],
+              "path": ["report", "update", "6851345074e71db7781642fc"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Activity",
+      "item": [
+        {
+          "name": "Create Activity",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activityType\": \"OFFER\",\n  \"description\": \"I have a spare room and some extra food for anyone affected by the recent flooding in the area. Please reach out.\",\n  \"location\": {\n    \"city\": \"Da Nang\",\n    \"country\": \"Vietnam\",\n    \"latitude\": 16.0544,\n    \"longitude\": 108.2022\n  },\n  \"helpItems\": [\n    {\n      \"helpType\": \"SHELTER\",\n      \"quantity\": 2\n    },\n    {\n      \"helpType\": \"FOOD\",\n      \"quantity\": 4\n    },\n    {\n      \"helpType\": \"WIFI\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/activity",
+              "host": ["{{HOST}}"],
+              "path": ["activity"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Activity",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activityType\": \"OFFER\",\n  \"description\": \"I have a spare room for anyone affected by the recent flooding in the area. Please reach out.\",\n  \"location\": {\n    \"city\": \"Da Nang\",\n    \"country\": \"Vietnam\",\n    \"latitude\": 16.0544,\n    \"longitude\": 108.2022\n  },\n  \"helpItems\": [\n    {\n      \"helpType\": \"SHELTER\",\n      \"quantity\": 2\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/activity/cmdbhth9p0001itldeopc51ne",
+              "host": ["{{HOST}}"],
+              "path": ["activity", "cmdbhth9p0001itldeopc51ne"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get all activity feed posts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/activity?limit=3",
+              "host": ["{{HOST}}"],
+              "path": ["activity"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "3"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get by ID Activity",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/activity/cmdbhth9p0001itldeopc51ne",
+              "host": ["{{HOST}}"],
+              "path": ["activity", "cmdbhth9p0001itldeopc51ne"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Activity",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/activity/cmdbhth9p0001itldeopc51ne",
+              "host": ["{{HOST}}"],
+              "path": ["activity", "cmdbhth9p0001itldeopc51ne"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Comment",
+      "item": [
+        {
+          "name": "Create Comment",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "post_id",
+                  "value": "68692b5718228fb9bed54dc2",
+                  "type": "text"
+                },
+                {
+                  "key": "comment",
+                  "value": "This is an example comment",
+                  "type": "text"
+                },
+                {
+                  "key": "commentsImage",
+                  "type": "file",
+                  "src": "/Users/kyithantsin/Downloads/Martin Ollivere.gif"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{HOST}}/comments/create",
+              "host": ["{{HOST}}"],
+              "path": ["comments", "create"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Comments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/comments/",
+              "host": ["{{HOST}}"],
+              "path": ["comments", ""]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Comment",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "post_id",
+                  "value": "686f9fb59056d6445e16567b",
+                  "type": "text"
+                },
+                {
+                  "key": "comment",
+                  "value": "This is an example updated comments",
+                  "type": "text"
+                },
+                {
+                  "key": "commentsImage",
+                  "type": "file",
+                  "src": "/Users/kyithantsin/Downloads/flower.jpeg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{HOST}}/comments/update/686fecff7b21d93d7bf2d2f7",
+              "host": ["{{HOST}}"],
+              "path": ["comments", "update", "686fecff7b21d93d7bf2d2f7"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Comment By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/comments/686fecff7b21d93d7bf2d2f7",
+              "host": ["{{HOST}}"],
+              "path": ["comments", "686fecff7b21d93d7bf2d2f7"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Comment",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/comments/delete/687004b12f78bae3c9be989e",
+              "host": ["{{HOST}}"],
+              "path": ["comments", "delete", "687004b12f78bae3c9be989e"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Comments By Post ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/comments/post/68692b5718228fb9bed54dc2",
+              "host": ["{{HOST}}"],
+              "path": ["comments", "post", "68692b5718228fb9bed54dc2"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Comment Replies",
+      "item": [
+        {
+          "name": "Create Replies",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "comment_id",
+                  "value": "686fecff7b21d93d7bf2d2f7",
+                  "type": "text"
+                },
+                {
+                  "key": "post_id",
+                  "value": "686f9fb59056d6445e16567b",
+                  "type": "text"
+                },
+                {
+                  "key": "reply",
+                  "value": "This is my reply to the comment",
+                  "type": "text"
+                },
+                {
+                  "key": "commentRepliesImage",
+                  "type": "file",
+                  "src": "/Users/kyithantsin/Downloads/ChatGPT Image Jun 14, 2025, 03_47_12 PM.png"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{HOST}}/commentReplies/create",
+              "host": ["{{HOST}}"],
+              "path": ["commentReplies", "create"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Replies By Comment ID",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"ky+8@gmail.com\",\n    \"password\": \"Password@123\"\n}"
+            },
+            "url": {
+              "raw": "{{HOST}}/commentReplies/comment/686fecff7b21d93d7bf2d2f7",
+              "host": ["{{HOST}}"],
+              "path": ["commentReplies", "comment", "686fecff7b21d93d7bf2d2f7"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Comment Reply",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "post_id",
+                  "value": "686f9fb59056d6445e16567b",
+                  "type": "text"
+                },
+                {
+                  "key": "comment_id",
+                  "value": "686fecff7b21d93d7bf2d2f7",
+                  "type": "text"
+                },
+                {
+                  "key": "reply",
+                  "value": "This is my UPDATED reply to the comment",
+                  "type": "text"
+                },
+                {
+                  "key": "commentRepliesImage",
+                  "type": "file",
+                  "src": "/Users/kyithantsin/Downloads/Notional UI illustrations.jpeg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{HOST}}/commentReplies/update/6870025774a4da91a886e004",
+              "host": ["{{HOST}}"],
+              "path": ["commentReplies", "update", "6870025774a4da91a886e004"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Comment Reply",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"ky+8@gmail.com\",\n    \"password\": \"Password@123\"\n}"
+            },
+            "url": {
+              "raw": "{{HOST}}/commentReplies/delete/68735b7d379d8e55aacbf006",
+              "host": ["{{HOST}}"],
+              "path": ["commentReplies", "delete", "68735b7d379d8e55aacbf006"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Comment Reply By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/commentReplies/6870025774a4da91a886e004",
+              "host": ["{{HOST}}"],
+              "path": ["commentReplies", "6870025774a4da91a886e004"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Test Notification with static location",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"lat\": 16.1,\n    \"lon\": 108.3,\n    \"mag\": 5.2,\n    \"place\": \"Test Quake 50km off the coast of Da Nang\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/example/debug/trigger-quake-alert",
+              "host": ["{{HOST}}"],
+              "path": ["example", "debug", "trigger-quake-alert"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reverse Geocoding",
+      "item": [
+        {
+          "name": "Reverse Geocoding",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"lat\": 16.0544,\n    \"lng\": 108.2022\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/location/reverse-geocode",
+              "host": ["{{HOST}}"],
+              "path": ["location", "reverse-geocode"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Example (Get Random Number)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/example",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["example"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "HOST",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
 }

@@ -17,6 +17,8 @@ import {
 } from '@/utils/errors';
 import { ReportDBStatus, ReportStatus, ReportType, User } from '@prisma/client';
 import { Collection, Document, Filter, ObjectId } from 'mongodb';
+import { COMMENT_REPLY_COLLECTION_NAME } from '../commentReplies/commentReplies';
+import { COMMENT_COLLECTION_NAME } from '../comments/comments';
 import { deleteFromSupabase } from './upload';
 
 export interface ValidatedDisasterPayload {
@@ -218,7 +220,7 @@ export async function createDisasterReport(
   }
 }
 
-export async function getAllDisasterReports(cursor: string, limit: string) {
+export async function getAllDisasterReports(cursor?: string, limit?: string) {
   const take = parseInt(limit as string, 10) || 10;
 
   try {
@@ -413,6 +415,11 @@ export async function deleteDisasterReport(reportId: string, user: User) {
 
     const postgresReportId = reportDocument.postgresReportId;
 
+    logger.info(
+      `MongoDB disaster report ${reportId} has PostgreSQL ID: ${postgresReportId}`,
+    );
+    logger.info(`PostgreSQL ID type: ${typeof postgresReportId}`);
+
     if (!postgresReportId) {
       logger.warn(
         `MongoDB disaster report ${reportId} has no PostgreSQL ID reference`,
@@ -443,6 +450,77 @@ export async function deleteDisasterReport(reportId: string, user: User) {
 
     const mediaItems = reportDocument.media || [];
     const imageFilenames = [];
+
+    logger.info(
+      `Deleting comments and replies for disaster report: ${reportId}`,
+    );
+
+    const commentCollection: Collection = db.collection(
+      COMMENT_COLLECTION_NAME,
+    );
+    const commentReplyCollection: Collection = db.collection(
+      COMMENT_REPLY_COLLECTION_NAME,
+    );
+
+    const comments = await commentCollection
+      .find({ postId: reportId })
+      .toArray();
+    const commentIds = comments.map((comment) => comment._id.toString());
+
+    logger.info(
+      `Found ${comments.length} comments to delete for disaster report: ${reportId}`,
+    );
+
+    for (const comment of comments) {
+      if (comment.media) {
+        try {
+          const commentFilename = comment.media.split('/').pop();
+          if (commentFilename) {
+            logger.info(`Deleting comment media: ${commentFilename}`);
+            await deleteFromSupabase(commentFilename);
+          }
+        } catch (deleteError) {
+          logger.error(`Error deleting comment media: ${deleteError}`);
+        }
+      }
+    }
+
+    if (commentIds.length > 0) {
+      const replies = await commentReplyCollection
+        .find({
+          commentId: { $in: commentIds },
+        })
+        .toArray();
+
+      logger.info(`Found ${replies.length} comment replies to delete`);
+
+      for (const reply of replies) {
+        if (reply.media) {
+          try {
+            const replyFilename = reply.media.split('/').pop();
+            if (replyFilename) {
+              logger.info(`Deleting comment reply media: ${replyFilename}`);
+              await deleteFromSupabase(replyFilename);
+            }
+          } catch (deleteError) {
+            logger.error(`Error deleting reply media: ${deleteError}`);
+          }
+        }
+      }
+
+      const deleteRepliesResult = await commentReplyCollection.deleteMany({
+        commentId: { $in: commentIds },
+      });
+
+      logger.info(
+        `Deleted ${deleteRepliesResult.deletedCount} comment replies`,
+      );
+    }
+
+    const deleteCommentsResult = await commentCollection.deleteMany({
+      postId: reportId,
+    });
+    logger.info(`Deleted ${deleteCommentsResult.deletedCount} comments`);
 
     const mongoDeleteResult = await disasterReportCollection.deleteOne({
       _id: new ObjectId(reportId),
@@ -489,7 +567,7 @@ export async function deleteDisasterReport(reportId: string, user: User) {
     return {
       mongoResourceId: reportId,
       postgresResourceId: postgresReportId,
-      message: `Disaster report "${existingReport?.name}" deleted successfully`,
+      message: `Disaster report "${existingReport?.name}" and all related comments deleted successfully`,
       deletedAt: new Date(),
     };
   } catch (error) {
