@@ -4,7 +4,6 @@ import { Router } from "express";
 
 const router = Router();
 
-router.post('/add', secureRoute(), favoriteController.CreateFavorite);
-router.delete('/remove/:id', secureRoute(), favoriteController.RemoveFavorite);
+router.post('/toggle', secureRoute(), favoriteController.ToggleFavorite);
 
 export default router;
