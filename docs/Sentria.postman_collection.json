@@ -1,11 +1,10 @@
 {
 	"info": {
-		"_postman_id": "09bd5c18-f7c0-496b-84ad-62ab7b57a514",
+		"_postman_id": "6e1b2700-222b-4a00-a3de-f4f605bd3409",
 		"name": "Sentria",
 		"description": "- inside variables, make sure HOST is pointing to the port number your backend is running",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "35166542",
-		"_collection_link": "https://sentria.postman.co/workspace/sentria-db~003d23dd-cccc-45fd-ae9e-79064ffc9c56/collection/35166542-09bd5c18-f7c0-496b-84ad-62ab7b57a514?action=share&source=collection_link&creator=35166542"
+		"_exporter_id": "28564017"
 	},
 	"item": [
 		{
@@ -35,7 +34,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"kyits485+99@gmail.com\",\n    \"firstName\": \"KT\",\n    \"lastName\": \"Doe\",\n    \"username\": \"Kyi Thant Sin\",\n    \"password\": \"Password@123\",\n    \"birthday\": \"1990-01-01\",\n    \"country\": \"US\"\n}",
+							"raw": "{\n    \"email\": \"aungkyawphyo142.edu+700@gmail.com\",\n    \"firstName\": \"Aung\",\n    \"lastName\": \"Kyaw\",\n    \"username\": \"aungphyo7000\",\n    \"password\": \"Password@123\",\n    \"birthday\": \"1990-01-01\",\n    \"country\": \"US\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -62,7 +61,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"kyits485+99@gmail.com\",\n    \"password\": \"Password@123\"\n}",
+							"raw": "{\n    \"email\": \"aungkyawphyo142.edu+699@gmail.com\",\n    \"password\": \"Password@123\"\n\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -88,14 +87,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{HOST}}/auth/verify-email/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEwLCJpYXQiOjE3NDcyMzcwMzIsImV4cCI6MTc0NzMyMzQzMn0.moaxKs48lIiSzhjiDk-pxrWwOhYKoLrn05D97vFv80M",
+							"raw": "{{HOST}}/auth/verify-email/[PUT TOKEN HERE]",
 							"host": [
 								"{{HOST}}"
 							],
 							"path": [
 								"auth",
 								"verify-email",
-								"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEwLCJpYXQiOjE3NDcyMzcwMzIsImV4cCI6MTc0NzMyMzQzMn0.moaxKs48lIiSzhjiDk-pxrWwOhYKoLrn05D97vFv80M"
+								"[PUT TOKEN HERE]"
 							]
 						}
 					},
@@ -108,7 +107,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"kyits485+99@gmail.com\"\n}",
+							"raw": "{\n    \"email\": \"test+15@gmail.com\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -176,14 +175,14 @@
 							}
 						},
 						"url": {
-							"raw": "{{HOST}}/auth/reset-password/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImlhdCI6MTc1MzI2ODc4NSwiZXhwIjoxNzUzMzU1MTg1fQ.m0ldJBoFORi6SF0hhGXSKWCEuWF6EEdT0mFuOL33pIw",
+							"raw": "{{HOST}}/auth/reset-password/[TOKEN HERE]",
 							"host": [
 								"{{HOST}}"
 							],
 							"path": [
 								"auth",
 								"reset-password",
-								"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImlhdCI6MTc1MzI2ODc4NSwiZXhwIjoxNzUzMzU1MTg1fQ.m0ldJBoFORi6SF0hhGXSKWCEuWF6EEdT0mFuOL33pIw"
+								"[TOKEN HERE]"
 							]
 						}
 					},
@@ -193,37 +192,16 @@
 			"description": "This folder is for authorization related endpoints"
 		},
 		{
-			"name": "User",
+			"name": "Websocket",
 			"item": [
 				{
-					"name": "User Details By ID",
+					"name": "Send test update to websocket",
 					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{HOST}}/users/1",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"users",
-								"1"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Update",
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "PATCH",
+						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"id\" : 1,\n    \"verified_profile\":true,\n    \"country\": \"Bangkok\"\n}",
+							"raw": "{\n    \"reportId\": \"cmbex5z1z0001itp33afrj3hi\",\n    \"factCheckOverallPercentage\": 12,\n    \"status\": \"update irl\",\n    \"narrative\": \"update irl\",\n    \"lastCalculatedAt\": \"\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -231,56 +209,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{HOST}}/users/1",
+							"raw": "{{HOST}}/example/test-websocket",
 							"host": [
 								"{{HOST}}"
 							],
 							"path": [
-								"users",
-								"1"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Soft Delete",
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{HOST}}/users/1",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"users",
-								"1"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Recover",
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "PATCH",
-						"header": [],
-						"url": {
-							"raw": "{{HOST}}/users/1/recover",
-							"host": [
-								"{{HOST}}"
-							],
-							"path": [
-								"users",
-								"1",
-								"recover"
+								"example",
+								"test-websocket"
 							]
 						}
 					},
@@ -411,8 +346,251 @@
 			]
 		},
 		{
+			"name": "RabbitMQ",
+			"item": [
+				{
+					"name": "Send message to Queue",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"Report creation 1\",\n    \"data\": {\n        \"testId\": 126,\n        \"payload\": \"data...\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{HOST}}/example/test-rabbitmq",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"example",
+								"test-rabbitmq"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Send Bulk Test Reports",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{HOST}}/goTest/send-bulk-test-jobs",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"goTest",
+								"send-bulk-test-jobs"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "User",
+			"item": [
+				{
+					"name": "User Details By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{HOST}}/users/1",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"users",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\" : 1,\n    \"country\": \"Bangkok\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{HOST}}/users/1",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"users",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Soft Delete",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{HOST}}/users/1",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"users",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Recover",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{HOST}}/users/1/recover",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"users",
+								"1",
+								"recover"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Follow",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"followingId\": 1\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{HOST}}/followers/follow",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"followers",
+								"follow"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Unfollow",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"followingId\": 1\n\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{HOST}}/followers/unfollow",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"followers",
+								"unfollow"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Disaster Report",
 			"item": [
+				{
+					"name": "voting",
+					"item": [
+						{
+							"name": "vote",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"voteType\": \"UPVOTE\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{HOST}}/report/cmcyidznx0001its7egt2c8s8/vote",
+									"host": [
+										"{{HOST}}"
+									],
+									"path": [
+										"report",
+										"cmcyidznx0001its7egt2c8s8",
+										"vote"
+									],
+									"query": [
+										{
+											"key": "",
+											"value": null,
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
 				{
 					"name": "Get Reports",
 					"request": {
@@ -441,11 +619,14 @@
 								{
 									"key": "reportImage",
 									"type": "file",
-									"src": "/Users/kyithantsin/Downloads/ChatGPT Image Jun 14, 2025, 03_47_12 PM.png"
+									"src": [
+										"postman-cloud:///1eff35d6-6838-4c60-962c-b7b5c7b6bb46",
+										"postman-cloud:///1eff1043-7b0e-4dc0-a28d-5f67d1b48fa7"
+									]
 								},
 								{
 									"key": "imageCaption",
-									"value": "Earthquake damage in Tokyo",
+									"value": "\"\"",
 									"type": "text"
 								},
 								{
@@ -455,7 +636,7 @@
 								},
 								{
 									"key": "name",
-									"value": "Major Earthquake in Tokyo",
+									"value": "Major Earthquake in Tokyo - TestCloud",
 									"type": "text"
 								},
 								{
@@ -484,13 +665,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{HOST}}/report/683d757879ad323ffbf27f3e",
+							"raw": "{{HOST}}/report/687697cdc4dd10d9773a5c51",
 							"host": [
 								"{{HOST}}"
 							],
 							"path": [
 								"report",
-								"683d757879ad323ffbf27f3e"
+								"687697cdc4dd10d9773a5c51"
 							]
 						}
 					},
@@ -502,14 +683,14 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{HOST}}/report/delete/6875e0baf05a75ec566341f4",
+							"raw": "{{HOST}}/report/delete/683d757879ad323ffbf27f3e",
 							"host": [
 								"{{HOST}}"
 							],
 							"path": [
 								"report",
 								"delete",
-								"6875e0baf05a75ec566341f4"
+								"683d757879ad323ffbf27f3e"
 							]
 						}
 					},
@@ -538,6 +719,123 @@
 								"report",
 								"update",
 								"6851345074e71db7781642fc"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Activity",
+			"item": [
+				{
+					"name": "Create Activity",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"activityType\": \"OFFER\",\n  \"description\": \"I have a spare room and some extra food for anyone affected by the recent flooding in the area. Please reach out.\",\n  \"location\": {\n    \"city\": \"Da Nang\",\n    \"country\": \"Vietnam\",\n    \"latitude\": 16.0544,\n    \"longitude\": 108.2022\n  },\n  \"helpItems\": [\n    {\n      \"helpType\": \"SHELTER\",\n      \"quantity\": 2\n    },\n    {\n      \"helpType\": \"FOOD\",\n      \"quantity\": 4\n    },\n    {\n      \"helpType\": \"WIFI\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{HOST}}/activity",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"activity"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Activity",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"activityType\": \"OFFER\",\n  \"description\": \"I have a spare room for anyone affected by the recent flooding in the area. Please reach out.\",\n  \"location\": {\n    \"city\": \"Da Nang\",\n    \"country\": \"Vietnam\",\n    \"latitude\": 16.0544,\n    \"longitude\": 108.2022\n  },\n  \"helpItems\": [\n    {\n      \"helpType\": \"SHELTER\",\n      \"quantity\": 2\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{HOST}}/activity/cmdbhth9p0001itldeopc51ne",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"activity",
+								"cmdbhth9p0001itldeopc51ne"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get all activity feed posts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{HOST}}/activity?limit=3",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"activity"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "3"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get by ID Activity",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{HOST}}/activity/cmdbhth9p0001itldeopc51ne",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"activity",
+								"cmdbhth9p0001itldeopc51ne"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Activity",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{HOST}}/activity/cmdbhth9p0001itldeopc51ne",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"activity",
+								"cmdbhth9p0001itldeopc51ne"
 							]
 						}
 					},
@@ -859,6 +1157,90 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "Test Notification with static location",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"lat\": 16.1,\n    \"lon\": 108.3,\n    \"mag\": 5.2,\n    \"place\": \"Test Quake 50km off the coast of Da Nang\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{HOST}}/example/debug/trigger-quake-alert",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"example",
+								"debug",
+								"trigger-quake-alert"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Reverse Geocoding",
+			"item": [
+				{
+					"name": "Reverse Geocoding",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"lat\": 16.0544,\n    \"lng\": 108.2022\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{HOST}}/location/reverse-geocode",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"location",
+								"reverse-geocode"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Example (Get Random Number)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/example",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"example"
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"event": [
