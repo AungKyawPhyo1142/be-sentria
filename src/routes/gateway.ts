@@ -9,6 +9,8 @@ import reportRouter from '@/routes/reports/reports';
 import resourceRouter from '@/routes/resources/resources';
 import locationRouter from '@/routes/reverse-geocode/location';
 import userRouter from '@/routes/user/user';
+import favoriteRouter from '@/routes/favorites/favorites';
+
 import { Router } from 'express';
 
 const gateway = Router();
@@ -24,5 +26,5 @@ gateway.use('/goTest', goTestRouter);
 gateway.use('/followers', followersRouter);
 gateway.use('/comments', commentsRouter);
 gateway.use('/commentReplies', commentRepliesRouter);
-
+gateway.use('/favorites', favoriteRouter);
 export default gateway;
