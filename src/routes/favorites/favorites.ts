@@ -5,5 +5,5 @@ import { Router } from "express";
 const router = Router();
 
 router.post('/toggle', secureRoute(), favoriteController.ToggleFavorite);
-
+router.get('/', secureRoute(), favoriteController.GetFavorites);
 export default router;

@@ -42,7 +42,9 @@ export async function toggleFavorite(
       });
 
       if (result.deletedCount === 0) {
-        throw new InternalServerError('Failed to remove the post from favorites');
+        throw new InternalServerError(
+          'Failed to remove the post from favorites',
+        );
       }
 
       return {
@@ -79,3 +81,33 @@ export async function toggleFavorite(
   }
 }
 
+export async function getFavorites(user: User, limit: number, skip: number) {
+  try {
+    const db = await getMongoDB();
+    const favoriteCollection: Collection = db.collection(
+      FAVOIRTE_COLLECTION_NAME,
+    );
+
+    const totalCount = await favoriteCollection.countDocuments({userId: user.id });
+    const favorites = await favoriteCollection
+      .find({userId : user.id})
+      .sort({ systemCreatedAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray();
+    
+    return {
+      favorites,
+      pagination: {
+        total: totalCount,
+        limit,
+        skip,
+        hasMore: skip + favorites.length < totalCount,
+      },
+    };
+
+  } catch (error) {
+    logger.error(`Error Getting Favorite Lists`);
+    throw error;
+  }
+}
