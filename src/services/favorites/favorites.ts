@@ -88,14 +88,16 @@ export async function getFavorites(user: User, limit: number, skip: number) {
       FAVOIRTE_COLLECTION_NAME,
     );
 
-    const totalCount = await favoriteCollection.countDocuments({userId: user.id });
+    const totalCount = await favoriteCollection.countDocuments({
+      userId: user.id,
+    });
     const favorites = await favoriteCollection
-      .find({userId : user.id})
+      .find({ userId: user.id })
       .sort({ systemCreatedAt: -1 })
       .skip(skip)
       .limit(limit)
       .toArray();
-    
+
     return {
       favorites,
       pagination: {
@@ -105,9 +107,46 @@ export async function getFavorites(user: User, limit: number, skip: number) {
         hasMore: skip + favorites.length < totalCount,
       },
     };
-
   } catch (error) {
     logger.error(`Error Getting Favorite Lists`);
+    throw error;
+  }
+}
+
+export async function getFavoritesByPostType(
+  user: User,
+  validatedPostType: string,
+  limit: number,
+  skip: number,
+) {
+  try {
+    const db = await getMongoDB();
+    const favoriteCollection: Collection = db.collection(
+      FAVOIRTE_COLLECTION_NAME,
+    );
+
+    const totalCount = await favoriteCollection.countDocuments({
+      userId: user.id,
+      postType : validatedPostType,
+    });
+    const favorites = await favoriteCollection
+      .find({ userId: user.id, postType : validatedPostType })
+      .sort({ systemCreatedAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray();
+
+    return {
+      favorites,
+      pagination: {
+        total: totalCount,
+        limit,
+        skip,
+        hasMore: skip + favorites.length < totalCount,
+      },
+    };
+  } catch (error) {
+    logger.error(`Error Getting Favorite Lists By Post Type`);
     throw error;
   }
 }
