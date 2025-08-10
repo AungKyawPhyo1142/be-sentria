@@ -1,10 +1,11 @@
 {
 	"info": {
-		"_postman_id": "6e1b2700-222b-4a00-a3de-f4f605bd3409",
+		"_postman_id": "5e474100-08b4-4db8-b80c-426a0043b215",
 		"name": "Sentria",
 		"description": "- inside variables, make sure HOST is pointing to the port number your backend is running",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "28564017"
+		"_exporter_id": "35166542",
+		"_collection_link": "https://sentria.postman.co/workspace/sentria-db~003d23dd-cccc-45fd-ae9e-79064ffc9c56/collection/35166542-5e474100-08b4-4db8-b80c-426a0043b215?action=share&source=collection_link&creator=35166542"
 	},
 	"item": [
 		{
@@ -61,7 +62,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"aungkyawphyo142.edu+699@gmail.com\",\n    \"password\": \"Password@123\"\n\n}",
+							"raw": "{\n    \"email\": \"kyits485+99@gmail.com\",\n    \"password\": \"Password@123\"\n\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1216,6 +1217,74 @@
 							"path": [
 								"location",
 								"reverse-geocode"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Favorites",
+			"item": [
+				{
+					"name": "Add & Remove",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"post_id\": \"cmdvh8qnx0001lx3w47k03qj2\",\n    \"post_type\": \"FEED\" // or FEED\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{HOST}}/favorites/toggle",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"favorites",
+								"toggle"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Favorites",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{HOST}}/favorites/",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"favorites",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Favorites By Post Type",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{HOST}}/favorites/FEED",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"favorites",
+								"FEED"
 							]
 						}
 					},
