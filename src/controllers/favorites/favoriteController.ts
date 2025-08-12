@@ -96,15 +96,15 @@ export async function GetFavoritesByPostType(
     const skip = req.query.skip ? parseInt(req.query.skip as string) : 0;
 
     const result = await favouriteService.getFavoritesByPostType(
-      user, 
-      validatedPostType, 
-      limit, 
-      skip
+      user,
+      validatedPostType,
+      limit,
+      skip,
     );
 
-    return res.status(200).json({result});
-  } catch(error){
-    logger.error("Error in Fetching favorites based on the post types");
+    return res.status(200).json({ result });
+  } catch (error) {
+    logger.error('Error in Fetching favorites based on the post types');
     throw next(error);
   }
 }

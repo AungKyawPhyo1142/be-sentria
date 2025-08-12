@@ -3,7 +3,10 @@ import { getMongoDB } from '@/libs/mongo';
 import prisma from '@/libs/prisma';
 // import { emitFactCheckUpdateToRoom } from '@/libs/socketManager';
 import logger from '@/logger';
-import { calculateAndUpdateTotalScore, DISASTER_COLLECTION_NAME } from '@/services/disasterReports/disasterReports';
+import {
+  DISASTER_COLLECTION_NAME,
+  calculateAndUpdateTotalScore,
+} from '@/services/disasterReports/disasterReports';
 import { InternalServerError } from '@/utils/errors';
 import { ReportStatus } from '@prisma/client';
 import amqp, { Channel, ChannelModel, ConsumeMessage } from 'amqplib';
@@ -169,20 +172,23 @@ async function connectAndConsumeResults(attempt = 1): Promise<void> {
             const updatePayload = {
               $set: {
                 'factCheck.goService.status': resultPayload.status,
-                'factCheck.goService.confidenceScore': resultPayload.overallConfidence,
+                'factCheck.goService.confidenceScore':
+                  resultPayload.overallConfidence,
                 'factCheck.goService.narrative': resultPayload.narrative,
                 'factCheck.goService.evidence': resultPayload.evidence || [],
                 'factCheck.goService.lastCheckedAt': resultPayload.checkedAt
                   ? new Date(resultPayload.checkedAt)
                   : new Date(),
-                'factCheck.goService.serviceProvider': resultPayload.serviceProvider,
-                'factCheck.goService.processingError': resultPayload.processingError,
+                'factCheck.goService.serviceProvider':
+                  resultPayload.serviceProvider,
+                'factCheck.goService.processingError':
+                  resultPayload.processingError,
                 // Also update the overall percentage at the same time
                 'factCheck.overallPercentage': resultPayload.overallConfidence,
                 'factCheck.lastCalculatedAt': new Date(resultPayload.checkedAt),
                 // Keep existing communityScore, don't overwrite it unless Go service aggregates it
                 // "communityScore": { upvotes: existingUpvotes, downvotes: existingDownvotes }
-              }
+              },
             };
 
             logger.debug(
@@ -194,7 +200,7 @@ async function connectAndConsumeResults(attempt = 1): Promise<void> {
                 postgresReportId: resultPayload.postgresReportId,
               },
               updatePayload, // This will set the entire factCheck object, or use dot notation for subfields.
-              
+
               // Be careful if communityScore should be preserved.
               // A safer update for sub-fields of factCheck:
               // { $set: {

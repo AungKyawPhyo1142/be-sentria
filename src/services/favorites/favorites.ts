@@ -127,10 +127,10 @@ export async function getFavoritesByPostType(
 
     const totalCount = await favoriteCollection.countDocuments({
       userId: user.id,
-      postType : validatedPostType,
+      postType: validatedPostType,
     });
     const favorites = await favoriteCollection
-      .find({ userId: user.id, postType : validatedPostType })
+      .find({ userId: user.id, postType: validatedPostType })
       .sort({ systemCreatedAt: -1 })
       .skip(skip)
       .limit(limit)

@@ -2,6 +2,7 @@ import { ENV } from '@/env';
 import { getMongoDB } from '@/libs/mongo';
 import prisma from '@/libs/prisma';
 import { publishToQueue } from '@/libs/rabbitmqClient';
+import { emitFactCheckUpdateToRoom } from '@/libs/socketManager';
 import logger from '@/logger';
 import {
   DISASTER_INCIDENT_TYPE,
@@ -20,7 +21,6 @@ import { Collection, Document, Filter, ObjectId } from 'mongodb';
 import { COMMENT_REPLY_COLLECTION_NAME } from '../commentReplies/commentReplies';
 import { COMMENT_COLLECTION_NAME } from '../comments/comments';
 import { deleteFromSupabase } from './upload';
-import { emitFactCheckUpdateToRoom } from '@/libs/socketManager';
 
 export interface ValidatedDisasterPayload {
   reportName: string;
@@ -38,8 +38,8 @@ export interface ValidatedDisasterPayload {
 }
 
 // factcheck score weights
-const GO_SERVICE_WEIGHT = 0.5
-const COMMUNITY_VOTE_WEIGHT = 0.5
+const GO_SERVICE_WEIGHT = 0.5;
+const COMMUNITY_VOTE_WEIGHT = 0.5;
 
 // mongo db collection name
 export const DISASTER_COLLECTION_NAME = 'disasters_incidents';
@@ -706,72 +706,83 @@ export async function updateDisasterReport(
   }
 }
 
-
 export async function calculateAndUpdateTotalScore(reportId: string) {
-  logger.info(`Recalculating total score for report ${reportId}`)
+  logger.info(`Recalculating total score for report ${reportId}`);
 
-  const db = await getMongoDB()
-  const disasterCollection = db.collection(DISASTER_COLLECTION_NAME)
+  const db = await getMongoDB();
+  const disasterCollection = db.collection(DISASTER_COLLECTION_NAME);
 
   // 1. fetch the latest data from both db
-  const reportPg = await prisma.report.findUnique({ where: { id: reportId } })
-  const reportMongo = await disasterCollection.findOne({ postgresReportId: reportId })
+  const reportPg = await prisma.report.findUnique({ where: { id: reportId } });
+  const reportMongo = await disasterCollection.findOne({
+    postgresReportId: reportId,
+  });
 
   if (!reportPg || !reportMongo) {
-    logger.error(`Could not find report in both DBs for score calculation: PG_ID: ${reportId}`)
-    return
+    logger.error(
+      `Could not find report in both DBs for score calculation: PG_ID: ${reportId}`,
+    );
+    return;
   }
 
   // 2. get input scores
   // note that Go service score is already a float between 0.0 - 1.0
-  const goServiceScore = reportMongo.factCheck?.goService?.confidenceScore ?? 0
+  const goServiceScore = reportMongo.factCheck?.goService?.confidenceScore ?? 0;
 
   // calculate community score (float between 0.0 - 1.0)
   const upvotes = reportPg.upvoteCount;
-  const downvotes = reportPg.downvoteCount
-  const totalVotes = upvotes + downvotes
+  const downvotes = reportPg.downvoteCount;
+  const totalVotes = upvotes + downvotes;
   // If there are no votes, we treat the community score as neutral (0.5)
   // so it doesn't unfairly drag down a high Go service score.
-  const communityScore = totalVotes === 0 ? 0.5 : upvotes / totalVotes
+  const communityScore = totalVotes === 0 ? 0.5 : upvotes / totalVotes;
 
   // 3. Applying weighted formula
-  const totalTrustScore = (goServiceScore * GO_SERVICE_WEIGHT) + (communityScore * COMMUNITY_VOTE_WEIGHT)
+  const totalTrustScore =
+    goServiceScore * GO_SERVICE_WEIGHT + communityScore * COMMUNITY_VOTE_WEIGHT;
 
-  const finalPercentage = Math.round(totalTrustScore * 100)
-  logger.info(`Report ${reportId}: GoScore:${goServiceScore}, CommunityScore:${communityScore}, FinalPercentage:${finalPercentage}%`)
+  const finalPercentage = Math.round(totalTrustScore * 100);
+  logger.info(
+    `Report ${reportId}: GoScore:${goServiceScore}, CommunityScore:${communityScore}, FinalPercentage:${finalPercentage}%`,
+  );
 
-  const now = new Date()
+  const now = new Date();
 
   // update the postgres
   await prisma.report.update({
     where: { id: reportId },
     data: {
       factCheckOverallPercentage: finalPercentage,
-      factCheckLastUpdatedAt: now
-    }
-  })
+      factCheckLastUpdatedAt: now,
+    },
+  });
 
   // update mongo
   await disasterCollection.updateOne(
-    { postgresReportId: reportId }, {
-    $set: {
-      'factCheck.overallPercentage': finalPercentage,
-      'factCheck.lastCalculatedAt': now
-    }
-  }
-  )
+    { postgresReportId: reportId },
+    {
+      $set: {
+        'factCheck.overallPercentage': finalPercentage,
+        'factCheck.lastCalculatedAt': now,
+      },
+    },
+  );
 
-  logger.info(`Successfully updated total trust score for report ${reportId} to ${finalPercentage}%`);
+  logger.info(
+    `Successfully updated total trust score for report ${reportId} to ${finalPercentage}%`,
+  );
 
   const socketPayload = {
     reportId: reportId,
     factCheck: {
       overallPercentage: finalPercentage,
-      status: reportMongo.factCheck?.goService?.status || 'PENDING_VERIFICATION',
-      narrative: reportMongo.factCheck?.goService?.narrative || 'Awaiting automated verification.',
+      status:
+        reportMongo.factCheck?.goService?.status || 'PENDING_VERIFICATION',
+      narrative:
+        reportMongo.factCheck?.goService?.narrative ||
+        'Awaiting automated verification.',
       lastCalculatedAt: now.toISOString(),
-    }
+    },
   };
   emitFactCheckUpdateToRoom(reportId, socketPayload);
-
 }
