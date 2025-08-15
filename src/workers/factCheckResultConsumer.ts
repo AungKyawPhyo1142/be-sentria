@@ -64,7 +64,6 @@ async function connectAndConsumeResults(attempt = 1): Promise<void> {
 
     resultsConsumerConnection = await amqp.connect(ENV.RABBITMQ_URL); //
 
-
     resultsConsumerChannel = await resultsConsumerConnection.createChannel();
     logger.info(
       '[FactCheckResultConsumer] Connected to RabbitMQ and channel created for results.',

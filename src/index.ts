@@ -12,6 +12,7 @@ import {
   closeRabbitMQConnection,
   initRabbitMQConnection,
 } from './libs/rabbitmqClient';
+import { initRedisConnection } from './libs/redisClient';
 import { getIOInstance, initSocketIOServer } from './libs/socketManager';
 import logger from './logger';
 import errorHandler from './middlewares/error-handler';
@@ -19,12 +20,11 @@ import jsonResponse from './middlewares/json-response';
 import networkLog from './middlewares/network-log';
 import gateway from './routes/gateway';
 import { InternalServerError, NotFoundError } from './utils/errors';
+import { startDiasterNotificationConsumer } from './workers/disasterNotificationConsumer';
 import {
   startFactCheckResultConsumer,
   stopFactCheckResultConsumer,
 } from './workers/factCheckResultConsumer';
-import { initRedisConnection } from './libs/redisClient';
-import { startDiasterNotificationConsumer } from './workers/disasterNotificationConsumer';
 
 async function startServer() {
   try {
@@ -38,7 +38,7 @@ async function startServer() {
 
     // connect to redis
     if (ENV.REDIS_URL) {
-      await initRedisConnection()
+      await initRedisConnection();
     } else {
       logger.error('REDIS_URL is not defined');
       throw new Error('REDIS_URL is not defined');
@@ -67,10 +67,15 @@ async function startServer() {
       // start diaster notification consumer
       await startDiasterNotificationConsumer().catch(
         (startDiasterNotificationError) => {
-          logger.error(`Failed to start DiasterNotificationConsumer`, startDiasterNotificationError);
-          throw new InternalServerError('Failed to start Diaster Notification Consumer')
-        }
-      )
+          logger.error(
+            `Failed to start DiasterNotificationConsumer`,
+            startDiasterNotificationError,
+          );
+          throw new InternalServerError(
+            'Failed to start Diaster Notification Consumer',
+          );
+        },
+      );
     } else {
       logger.error('RABBITMQ_URL is not defined');
       throw new InternalServerError('RABBITMQ_URL is not defined');
@@ -113,19 +118,20 @@ async function startServer() {
 
     httpServer.listen(ENV.PORT, () => {
       const {
-        DATABASE_URL,
-        JWT_SECRET,
-        REFRESH_TOKEN_SECRET,
-        RESET_PASSWORD_SENDER_PASSWORD,
-        MONGO_URI,
-        RABBITMQ_URL,
-        REDIS_URL,
+        // DATABASE_URL,
+        // JWT_SECRET,
+        // REFRESH_TOKEN_SECRET,
+        // RESET_PASSWORD_SENDER_PASSWORD,
+        // MONGO_URI,
+        // RABBITMQ_URL,
+        // REDIS_URL,
         ...safeEnv
       } = ENV;
       logger.verbose(
-        `ENV is pointing to ${ENV.NODE_ENV !== 'production'
-          ? JSON.stringify(safeEnv, undefined, 2)
-          : ENV.NODE_ENV
+        `ENV is pointing to ${
+          ENV.NODE_ENV !== 'production'
+            ? JSON.stringify(safeEnv, undefined, 2)
+            : ENV.NODE_ENV
         }`,
       );
       expressListRoutes(gateway, { logger: false }).forEach((route) => {

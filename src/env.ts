@@ -4,10 +4,10 @@ export const ENV = {
   APP: process.env.APP || 'be-sentria',
   CORS_ORIGIN: process.env.CORS_ORIGIN || true,
   DATABASE_URL: process.env.DATABASE_URL,
-  JWT_SECRET: process.env.JWT_SECRET,
+  JWT_SECRET: process.env.JWT_SECRET || '',
   NODE_ENV: (process.env.NODE_ENV || 'dev') as 'local' | 'dev' | 'production',
   PORT: process.env.PORT || 3000,
-  REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET,
+  REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET || '',
   RESET_PASSWORD_SENDER_EMAIL:
     process.env.RESET_PASSWORD_SENDER_EMAIL || 'sentria.platform@gmail.com',
   RESET_PASSWORD_SENDER_PASSWORD: process.env.RESET_PASSWORD_SENDER_PASSWORD,
@@ -19,8 +19,10 @@ export const ENV = {
   RABBITMQ_FACTCHECK_RESULT_QUEUE_NAME:
     process.env.RABBITMQ_FACTCHECK_RESULT_QUEUE_NAME ||
     'sentria_factcheck_results',
-  RABBITMQ_NOTIFICATION_QUEUE_NAME: process.env.RABBITMQ_NOTIFICATION_QUEUE_NAME || 'sentria_send_notification_jobs',
-  REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379'
+  RABBITMQ_NOTIFICATION_QUEUE_NAME:
+    process.env.RABBITMQ_NOTIFICATION_QUEUE_NAME ||
+    'sentria_send_notification_jobs',
+  REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
 };
 
 if (ENV.NODE_ENV === 'local' && !process.env.CORS_ORIGIN) {
@@ -62,5 +64,5 @@ if (
 }
 
 if (!ENV.REDIS_URL) {
-  throw new InternalServerError('REDIS URL is not defined')
+  throw new InternalServerError('REDIS URL is not defined');
 }

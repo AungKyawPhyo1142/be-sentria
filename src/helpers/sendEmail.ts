@@ -8,7 +8,6 @@ export const sendEmail = async (
   templateGroupName: string,
   sendToList: (string | undefined)[],
   subject: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any,
 ) => {
   const transporter = nodemailer.createTransport({
