@@ -1,7 +1,7 @@
 import * as followersService from '@/services/followers/followers';
-import { NextFunction, Request, Response } from 'express';
-import { object, number, ZodError } from 'zod';
 import { User } from '@prisma/client';
+import { NextFunction, Request, Response } from 'express';
+import { ZodError, number, object } from 'zod';
 
 const followSchema = object({
   followingId: number(),
@@ -35,11 +35,16 @@ const followUser = async (req: Request, res: Response, next: NextFunction) => {
         status: 'ERROR',
       });
     }
-    return next(error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    return next(err);
   }
 };
 
-const unfollowUser = async (req: Request, res: Response, next: NextFunction) => {
+const unfollowUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { followingId } = followSchema.parse(req.body);
     const follower = req.user as User;
@@ -59,7 +64,8 @@ const unfollowUser = async (req: Request, res: Response, next: NextFunction) => 
         status: 'ERROR',
       });
     }
-    return next(error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    return next(err);
   }
 };
 

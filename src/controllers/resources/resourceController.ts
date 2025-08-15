@@ -7,14 +7,14 @@ import {
   NotFoundError,
   ValidationError,
 } from '@/utils/errors';
+import { NextFunction, Request, Response } from 'express';
+import { object, string, z } from 'zod';
 
 enum ResourceType {
   SURVIVAL = 'SURVIVAL',
   HOTLINE = 'HOTLINE',
-  FIRST_AID = 'FIRST_AID'
+  FIRST_AID = 'FIRST_AID',
 }
-import { NextFunction, Request, Response } from 'express';
-import { object, string, z } from 'zod';
 
 const CreateResourceSchema = object({
   name: string()
@@ -47,7 +47,7 @@ const ResourceParametersSchema = object({
         type: z.enum(['IMAGE', 'VIDEO']),
         url: string().url({ message: 'Invalid URL' }),
         caption: string().max(250).optional(),
-      })
+      }),
     )
     .max(5, 'Maximum 5 media items allowed')
     .optional()
@@ -67,16 +67,19 @@ const CreateResourceRequestSchema = z.discriminatedUnion('resourceType', [
     resourceType: z.literal(ResourceType.FIRST_AID),
     parameters: ResourceParametersSchema,
   }),
-])
+]);
 
 const UpdateResourceSchema = object({
   name: string()
     .min(3, 'Resource name is too short')
     .max(150, 'Resource name is too long'),
-  resourceType: z.enum([ResourceType.SURVIVAL, ResourceType.HOTLINE, ResourceType.FIRST_AID]),
+  resourceType: z.enum([
+    ResourceType.SURVIVAL,
+    ResourceType.HOTLINE,
+    ResourceType.FIRST_AID,
+  ]),
   parameters: ResourceParametersSchema,
 });
-
 
 export async function CreateResource(
   req: Request,
@@ -91,7 +94,7 @@ export async function CreateResource(
 
     logger.info(`got a request to create resource for user: ${user.username}`);
 
-    if(!user.verified_profile){
+    if (!user.verified_profile) {
       logger.info(`User is not verified user: ${user.username}`);
       throw new AuthenticationError('User is not verified');
     }
@@ -100,20 +103,18 @@ export async function CreateResource(
       try {
         req.body.parameters = JSON.parse(req.body.parameters);
       } catch (e) {
-        return next(new BadRequestError('Invalid parameters JSON'));
+        return next(new BadRequestError(`Invalid parameters JSON: ${e}`));
       }
     }
 
     const validatedRequestBody = CreateResourceRequestSchema.parse(req.body);
     const { resourceType, name } = validatedRequestBody;
 
-    let result;
-
-    const resourceParams = (validatedRequestBody as any).parameters;
+    const resourceParams = validatedRequestBody.parameters;
 
     const servicePayload: resourceService.ValidatedResourcePayload = {
       description: resourceParams.description,
-      resourceType: resourceType as any,
+      resourceType: resourceType,
       location: {
         type: 'Point',
         coordinates: [
@@ -130,38 +131,44 @@ export async function CreateResource(
       },
       media: resourceParams.media || [],
     };
-    
+
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
       try {
-        logger.info(`Uploading ${req.files.length} resource images for user: ${user.id}`);
-        
+        logger.info(
+          `Uploading ${req.files.length} resource images for user: ${user.id}`,
+        );
+
         // Process each uploaded file
         const uploadPromises = req.files.map(async (file, index) => {
           const uploadResponse = await uploadToSupabase(file, user.id);
-          
+
           return {
             type: 'IMAGE' as const,
             url: uploadResponse.url,
-            caption: Array.isArray(req.body.imageCaptions) && req.body.imageCaptions[index] 
-              ? req.body.imageCaptions[index] 
-              : `Resource image ${index + 1}`
+            caption:
+              Array.isArray(req.body.imageCaptions) &&
+              req.body.imageCaptions[index]
+                ? req.body.imageCaptions[index]
+                : `Resource image ${index + 1}`,
           };
         });
-        
+
         const mediaItems = await Promise.all(uploadPromises);
-        
+
         servicePayload.media = [...mediaItems, ...(servicePayload.media || [])];
-        
-        logger.info(`Successfully uploaded ${mediaItems.length} resource images`);
+
+        logger.info(
+          `Successfully uploaded ${mediaItems.length} resource images`,
+        );
       } catch (uploadError) {
         logger.error(`Error uploading resource images: ${uploadError}`);
       }
     }
 
     logger.info(`Creating resource: ${JSON.stringify(servicePayload)}`);
-    result = await resourceService.createResource(
+    const result = await resourceService.createResource(
       servicePayload,
-      name, 
+      name,
       user,
     );
     return res.status(201).json({ result });
@@ -178,96 +185,102 @@ export async function UpdateResource(
   req: Request,
   res: Response,
   next: NextFunction,
-){
-  try{
-      const user = req.user;
-      if(!user){
-        throw new AuthenticationError('User not authenticated');
+) {
+  try {
+    const user = req.user;
+    if (!user) {
+      throw new AuthenticationError('User not authenticated');
+    }
+
+    if (!user.verified_profile) {
+      logger.info(`User is not verified user: ${user.username}`);
+      throw new AuthenticationError('User is not verified');
+    }
+
+    const resourceId = req.params.id;
+    if (!resourceId) {
+      throw new NotFoundError('Resource ID is required');
+    }
+
+    if (typeof req.body.parameters === 'string') {
+      try {
+        req.body.parameters = JSON.parse(req.body.parameters);
+      } catch (e) {
+        return next(new BadRequestError(`Invalid parameters JSON: ${e}`));
       }
+    }
 
-      if(!user.verified_profile){
-        logger.info(`User is not verified user: ${user.username}`);
-        throw new AuthenticationError('User is not verified');
+    const validatedRequestBody = UpdateResourceSchema.parse(req.body);
+    const { resourceType, name, parameters } = validatedRequestBody;
+
+    const servicePayload: resourceService.ValidatedResourcePayload = {
+      description: parameters.description,
+      resourceType: resourceType,
+      location: {
+        type: 'Point',
+        coordinates: [
+          parameters.location.longitude,
+          parameters.location.latitude,
+        ],
+      },
+      address: {
+        street: parameters.address?.street,
+        district: parameters.address?.district,
+        city: parameters.location.city,
+        country: parameters.location.country,
+        fullAddress: parameters.address?.fullAddress,
+      },
+      media: parameters.media || [],
+    };
+
+    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+      try {
+        logger.info(
+          `Uploading ${req.files.length} resource images for user: ${user.id}`,
+        );
+
+        const uploadPromises = req.files.map(async (file, index) => {
+          const uploadResponse = await uploadToSupabase(file, user.id);
+
+          return {
+            type: 'IMAGE' as const,
+            url: uploadResponse.url,
+            caption:
+              Array.isArray(req.body.imageCaptions) &&
+              req.body.imageCaptions[index]
+                ? req.body.imageCaptions[index]
+                : `Resource image ${index + 1}`,
+          };
+        });
+
+        const mediaItems = await Promise.all(uploadPromises);
+
+        servicePayload.media = [...mediaItems, ...(servicePayload.media || [])];
+
+        logger.info(
+          `Successfully uploaded ${mediaItems.length} resource images`,
+        );
+      } catch (uploadError) {
+        logger.error(`Error uploading resource images: ${uploadError}`);
       }
+    }
 
-      const resourceId = req.params.id;
-      if(!resourceId){
-        throw new NotFoundError('Resource ID is required');
-      }
-
-       if (typeof req.body.parameters === 'string') {
-            try {
-              req.body.parameters = JSON.parse(req.body.parameters);
-            } catch (e) {
-              return next(new BadRequestError('Invalid parameters JSON'));
-            }
-          }
-
-      const validatedRequestBody = UpdateResourceSchema.parse(req.body);
-      const { resourceType, name, parameters } = validatedRequestBody;
-
-      const servicePayload: resourceService.ValidatedResourcePayload = {
-        description: parameters.description,
-        resourceType: resourceType,
-        location: {
-          type: 'Point',
-          coordinates: [
-            parameters.location.longitude,
-            parameters.location.latitude,
-          ],
-        },
-        address: {
-          street: parameters.address?.street,
-          district: parameters.address?.district,
-          city: parameters.location.city,
-          country: parameters.location.country,
-          fullAddress: parameters.address?.fullAddress,
-        },
-        media: parameters.media || [],
-      };
-      
-      if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-        try {
-          logger.info(`Uploading ${req.files.length} resource images for user: ${user.id}`);
-          
-          const uploadPromises = req.files.map(async (file, index) => {
-            const uploadResponse = await uploadToSupabase(file, user.id);
-            
-            return {
-              type: 'IMAGE' as const,
-              url: uploadResponse.url,
-              caption: Array.isArray(req.body.imageCaptions) && req.body.imageCaptions[index] 
-                ? req.body.imageCaptions[index] 
-                : `Resource image ${index + 1}`
-            };
-          });
-          
-          const mediaItems = await Promise.all(uploadPromises);
-          
-          servicePayload.media = [...mediaItems, ...(servicePayload.media || [])];
-          
-          logger.info(`Successfully uploaded ${mediaItems.length} resource images`);
-        } catch (uploadError) {
-          logger.error(`Error uploading resource images: ${uploadError}`);
-        }
-      }
-
-      logger.info(`Updating resource: ${JSON.stringify(servicePayload)}`);
-      const result = await resourceService.updateResource(
-        resourceId,
-        servicePayload,
-        name,
-        user,
-      );
-      return res.status(200).json({ result });
-  }catch(error){
+    logger.info(`Updating resource: ${JSON.stringify(servicePayload)}`);
+    const result = await resourceService.updateResource(
+      resourceId,
+      servicePayload,
+      name,
+      user,
+    );
+    return res.status(200).json({ result });
+  } catch (error) {
     if (error instanceof z.ZodError) {
       return next(new ValidationError(error.issues));
-  }
+    }
 
-  logger.error(`Error updating resource: ${error}`);
-  return next(error);
-}
+    logger.error(`Error updating resource: ${error}`);
+    return next(error);
+  }
 }
 
 export async function GetResources(
@@ -278,7 +291,7 @@ export async function GetResources(
   try {
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
     const skip = req.query.skip ? parseInt(req.query.skip as string) : 0;
-    
+
     const result = await resourceService.getResources(limit, skip);
     return res.status(200).json(result);
   } catch (error) {
@@ -291,17 +304,16 @@ export async function GetResourceById(
   req: Request,
   res: Response,
   next: NextFunction,
-){
-  try{
+) {
+  try {
     const resourceId = req.params.id;
-    if(!resourceId){
+    if (!resourceId) {
       throw new NotFoundError('Resource ID is required');
     }
 
     const result = await resourceService.getResourceById(resourceId);
     return res.status(200).json(result);
-  
-  }catch(error){
+  } catch (error) {
     logger.error(`Error getting resource by id: ${error}`);
     return next(error);
   }
@@ -311,24 +323,23 @@ export async function DeleteResource(
   req: Request,
   res: Response,
   next: NextFunction,
-){
-  try{
+) {
+  try {
     const user = req.user;
-    if(!user){
+    if (!user) {
       throw new AuthenticationError('User not authenticated');
     }
 
     const mongoResourceId = req.params.id;
-    if(!mongoResourceId){
+    if (!mongoResourceId) {
       throw new NotFoundError('Resource MongoDB ID is required');
     }
 
     const result = await resourceService.deleteResource(mongoResourceId, user);
-    
+
     return res.status(200).json(result);
-  }catch(error){
+  } catch (error) {
     logger.error(`Error deleting resource: ${error}`);
     return next(error);
   }
 }
-  

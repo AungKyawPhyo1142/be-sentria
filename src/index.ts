@@ -112,9 +112,19 @@ async function startServer() {
     app.use(errorHandler);
 
     httpServer.listen(ENV.PORT, () => {
+      const {
+        DATABASE_URL,
+        JWT_SECRET,
+        REFRESH_TOKEN_SECRET,
+        RESET_PASSWORD_SENDER_PASSWORD,
+        MONGO_URI,
+        RABBITMQ_URL,
+        REDIS_URL,
+        ...safeEnv
+      } = ENV;
       logger.verbose(
         `ENV is pointing to ${ENV.NODE_ENV !== 'production'
-          ? JSON.stringify(ENV, undefined, 2)
+          ? JSON.stringify(safeEnv, undefined, 2)
           : ENV.NODE_ENV
         }`,
       );

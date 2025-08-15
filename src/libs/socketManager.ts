@@ -11,7 +11,7 @@ interface ServerToClientEvents {
   connection_ack: (data: { message: string }) => void;
   report_factcheck_update: (data: {
     reportId: string; // postgresReportId
-    factCheck: any; // TODO: define specific type later
+    factCheck: unknown; // TODO: define specific type later
   }) => void;
 }
 
@@ -27,14 +27,14 @@ interface ClientToServerEvents {
   update_location: (location: { lat: number; lng: number }) => void // for user location
 }
 
-interface InterServerEvents {
-  // server to server events
-}
+// interface InterServerEvents {
+//   // server to server events
+// }
 
-interface SocketData {
-  // data that is attached to the socket
-  // can store user-specific data here if needed after authentication
-}
+// interface SocketData {
+//   // data that is attached to the socket
+//   // can store user-specific data here if needed after authentication
+// }
 
 export function initSocketIOServer(httpServer: HTTPServer): SocketIOServer {
   if (io) {
@@ -45,8 +45,10 @@ export function initSocketIOServer(httpServer: HTTPServer): SocketIOServer {
   io = new SocketIOServer<
     ClientToServerEvents,
     ServerToClientEvents,
-    InterServerEvents,
-    SocketData
+    never, // InterServerEvents
+    never
+    // InterServerEvents,
+    // SocketData
   >(httpServer, {
     cors: {
       origin: ENV.CORS_ORIGIN,
@@ -122,7 +124,7 @@ export function initSocketIOServer(httpServer: HTTPServer): SocketIOServer {
 
 export function emitFactCheckUpdateToRoom(
   reportId: string,
-  factCheckData: any,
+  factCheckData: unknown,
 ) {
   if (!io) {
     logger.warn('[SocketIO] SocketIO server not initialized');
@@ -163,7 +165,7 @@ export function emitDisasterNotificationToRoom(
 }
 
 // broadcast to all clients if needed
-export function broadcastToAll(eventName: string, data: any) {
+export function broadcastToAll(eventName: string, data: unknown) {
   if (!io) {
     logger.warn('[SocketIO] SocketIO server not initialized');
     return;

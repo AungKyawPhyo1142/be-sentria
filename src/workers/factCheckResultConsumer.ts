@@ -1,9 +1,12 @@
 import { ENV } from '@/env';
 import { getMongoDB } from '@/libs/mongo';
 import prisma from '@/libs/prisma';
-import { emitFactCheckUpdateToRoom } from '@/libs/socketManager';
+// import { emitFactCheckUpdateToRoom } from '@/libs/socketManager';
 import logger from '@/logger';
-import { DISASTER_COLLECTION_NAME } from '@/services/disasterReports/disasterReports';
+import {
+  DISASTER_COLLECTION_NAME,
+  calculateAndUpdateTotalScore,
+} from '@/services/disasterReports/disasterReports';
 import { InternalServerError } from '@/utils/errors';
 import { ReportStatus } from '@prisma/client';
 import amqp, { Channel, ChannelModel, ConsumeMessage } from 'amqplib';
@@ -166,31 +169,38 @@ async function connectAndConsumeResults(attempt = 1): Promise<void> {
             // 2. Prepare the update for the factCheck object in MongoDB
             // We will update the 'factCheck' field, specifically its 'goService' sub-document,
             // and also the top-level 'overallPercentage' and 'lastCalculatedAt' within 'factCheck'.
-            const mongoFactCheckUpdate = {
-              'goService.status': resultPayload.status,
-              'goService.confidenceScore': resultPayload.overallConfidence,
-              'goService.narrative': resultPayload.narrative,
-              'goService.evidence': resultPayload.evidence || [],
-              'goService.lastCheckedAt': resultPayload.checkedAt
-                ? new Date(resultPayload.checkedAt)
-                : new Date(),
-              // 'goService.serviceProvider': resultPayload.serviceProvider,
-              // 'goService.processingError': resultPayload.processingError,
-              // overallPercentage: resultPayload.overallConfidence,
-              lastCalculatedAt: new Date(resultPayload.checkedAt),
-              // Keep existing communityScore, don't overwrite it unless Go service aggregates it
-              // "communityScore": { upvotes: existingUpvotes, downvotes: existingDownvotes }
+            const updatePayload = {
+              $set: {
+                'factCheck.goService.status': resultPayload.status,
+                'factCheck.goService.confidenceScore':
+                  resultPayload.overallConfidence,
+                'factCheck.goService.narrative': resultPayload.narrative,
+                'factCheck.goService.evidence': resultPayload.evidence || [],
+                'factCheck.goService.lastCheckedAt': resultPayload.checkedAt
+                  ? new Date(resultPayload.checkedAt)
+                  : new Date(),
+                'factCheck.goService.serviceProvider':
+                  resultPayload.serviceProvider,
+                'factCheck.goService.processingError':
+                  resultPayload.processingError,
+                // Also update the overall percentage at the same time
+                'factCheck.overallPercentage': resultPayload.overallConfidence,
+                'factCheck.lastCalculatedAt': new Date(resultPayload.checkedAt),
+                // Keep existing communityScore, don't overwrite it unless Go service aggregates it
+                // "communityScore": { upvotes: existingUpvotes, downvotes: existingDownvotes }
+              },
             };
 
             logger.debug(
-              `[FactCheckResultConsumer] Updating MongoDB document with ID: ${resultPayload.mongoDocId}`,
+              `[FactCheckResultConsumer] Updating MongoDB document with ID: ${resultPayload.postgresReportId}`,
             );
 
             const updateResult = await disasterCollection.updateOne(
               {
                 postgresReportId: resultPayload.postgresReportId,
               },
-              { $set: { factCheck: mongoFactCheckUpdate } }, // This will set the entire factCheck object, or use dot notation for subfields.
+              updatePayload, // This will set the entire factCheck object, or use dot notation for subfields.
+
               // Be careful if communityScore should be preserved.
               // A safer update for sub-fields of factCheck:
               // { $set: {
@@ -247,23 +257,26 @@ async function connectAndConsumeResults(attempt = 1): Promise<void> {
               `[FactCheckResultConsumer] PostgreSQL report ${resultPayload.postgresReportId} updated (Status: ${pgReportStatusUpdate}, FactCheck%: ${resultPayload.overallConfidence}).`,
             ); //
 
+            calculateAndUpdateTotalScore(resultPayload.postgresReportId);
+
+            // we dont need to emit here since we did that inside calculate function
             // 4. Broadcast update to connected WebSocket clients via Socket.IO
-            emitFactCheckUpdateToRoom(resultPayload.postgresReportId, {
-              //
-              overallPercentage: resultPayload.overallConfidence,
-              status: resultPayload.status,
-              narrative: resultPayload.narrative,
-              lastCalculatedAt: resultPayload.checkedAt,
-              // You might want to send the whole resultPayload.factCheck or parts of it
-            });
+            // emitFactCheckUpdateToRoom(resultPayload.postgresReportId, {
+            //   //
+            //   overallPercentage: resultPayload.overallConfidence,
+            //   status: resultPayload.status,
+            //   narrative: resultPayload.narrative,
+            //   lastCalculatedAt: resultPayload.checkedAt,
+            //   // You might want to send the whole resultPayload.factCheck or parts of it
+            // });
 
             resultsConsumerChannel?.ack(msg);
             logger.info(
               `[FactCheckResultConsumer] Result for PG_ID ${resultPayload.postgresReportId} fully processed and ACKed.`,
             ); //
-          } catch (processingError: any) {
+          } catch (processingError: unknown) {
             logger.error(
-              `[FactCheckResultConsumer] Error processing fact-check result message (DeliveryTag ${deliveryTag}): ${processingError.message}`,
+              `[FactCheckResultConsumer] Error processing fact-check result message (DeliveryTag ${deliveryTag}): ${processingError instanceof Error ? processingError.message : 'Unknown error'}`,
               { error: processingError, payloadString: msg.content.toString() },
             ); //
             resultsConsumerChannel?.nack(msg, false, false); // Nack, don't requeue for persistent errors
@@ -276,9 +289,9 @@ async function connectAndConsumeResults(attempt = 1): Promise<void> {
       },
       { noAck: false },
     ); // Manual acknowledgment is crucial
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(
-      `[FactCheckResultConsumer] Failed to connect/start consuming results queue: ${error.message}. Retrying...`,
+      `[FactCheckResultConsumer] Failed to connect/start consuming results queue: ${error instanceof Error ? error.message : 'Unknown error'}. Retrying...`,
       error,
     ); //
     if (resultsConsumerConnection) {
@@ -287,6 +300,10 @@ async function connectAndConsumeResults(attempt = 1): Promise<void> {
         resultsConsumerConnection.removeAllListeners();
       } catch (e) {
         /* ignore */
+        logger.error(
+          '[FactCheckResultConsumer] Error removing listeners from connection:',
+          e,
+        ); //
       }
     }
     resultsConsumerConnection = null;

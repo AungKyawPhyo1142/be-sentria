@@ -1,6 +1,6 @@
-import { Router } from 'express';
-import secureRoute from '@/middlewares/secure-route';
 import * as followersController from '@/controllers/followers/followers';
+import secureRoute from '@/middlewares/secure-route';
+import { Router } from 'express';
 
 const router = Router();
 
