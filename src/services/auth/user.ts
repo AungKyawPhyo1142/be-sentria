@@ -235,8 +235,8 @@ const resendEmail = async (email: string) => {
   }
 };
 
-const forgotPassword = async (email:string) => {
-  try{
+const forgotPassword = async (email: string) => {
+  try {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
       throw new NotFoundError('Account not found with this email');
@@ -246,14 +246,14 @@ const forgotPassword = async (email:string) => {
       expiresIn: '24hr',
     });
     const resetURL = `${ENV.FRONTEND_URL}/auth/reset-password/${resetToken}`;
-    
+
     const data = {
       name: `${user.firstName} ${user.lastName}`,
       email: email,
       resetLink: resetURL,
       currentYear: new Date().getFullYear(),
     };
-    
+
     await sendEmail(
       'email_reset_password_template_v1',
       'email_reset_password',
@@ -267,38 +267,48 @@ const forgotPassword = async (email:string) => {
       lastName: user.lastName,
       username: user.username,
     };
-  }catch(error){
+  } catch (error) {
     logger.error('Error forgot password', error);
     throw error;
   }
-}
+};
 
 const resetPassword = async (token: string, password: string) => {
-  try{
-     const decoded = jwt.verify(token, ENV.JWT_SECRET) as { userId: number };
-     const user = await prisma.user.findUnique({ where: {id: decoded.userId}});
+  try {
+    const decoded = jwt.verify(token, ENV.JWT_SECRET) as { userId: number };
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+    });
 
-     if(!user){
+    if (!user) {
       throw new NotFoundError('User not found');
-     }
+    }
 
-     const passwordHash = bcrypt.hashSync(password, 10);
+    const passwordHash = bcrypt.hashSync(password, 10);
 
-     await prisma.user.update({
-      where: {id: decoded.userId},
-      data: {password: passwordHash},
-     });
+    await prisma.user.update({
+      where: { id: decoded.userId },
+      data: { password: passwordHash },
+    });
 
-     return {
+    return {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
       username: user.username,
-     };
-  }catch(error){
+    };
+  } catch (error) {
     logger.error('Error reset password', error);
     throw error;
   }
-}
+};
 
-export { registerUser, loginUser, auth, verifyEmail, resendEmail , forgotPassword, resetPassword };
+export {
+  registerUser,
+  loginUser,
+  auth,
+  verifyEmail,
+  resendEmail,
+  forgotPassword,
+  resetPassword,
+};

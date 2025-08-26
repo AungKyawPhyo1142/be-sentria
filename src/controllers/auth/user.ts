@@ -17,7 +17,7 @@ const registerUserSchema = object({
 
 const forgotPasswordSchema = object({
   email: string().email(),
-})
+});
 
 const loginSchema = object({
   email: string().email(),
@@ -31,7 +31,7 @@ const resendEmailSchema = object({
 
 const resetPasswordSchema = object({
   password: string().min(8),
-})
+});
 
 const auth = (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -134,41 +134,50 @@ const forgotPassword = async (
   res: Response,
   next: NextFunction,
 ) => {
-  try{
-    const {email} = forgotPasswordSchema.parse(req.body);
+  try {
+    const { email } = forgotPasswordSchema.parse(req.body);
     await userService.forgotPassword(email);
-    return res.status(200).json({ message: 'forgot password email sent successfully' });
-  }catch(error){
-    if(error instanceof ZodError){
+    return res
+      .status(200)
+      .json({ message: 'forgot password email sent successfully' });
+  } catch (error) {
+    if (error instanceof ZodError) {
       return next(new ValidationError(error.issues));
     }
     return next(error);
   }
-}
+};
 
 const resetPassword = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  try{
-    const {token} = req.params;
-    const {password} = resetPasswordSchema.parse(req.body);
+  try {
+    const { token } = req.params;
+    const { password } = resetPasswordSchema.parse(req.body);
 
-    if(!token){
+    if (!token) {
       throw new AuthenticationError('Invalid token');
     }
 
     await userService.resetPassword(token, password);
     return res.status(200).json({ message: 'Password reset successfully' });
-  }catch(error){
+  } catch (error) {
     logger.error('Error reset password', error);
-    if(error instanceof ZodError){
+    if (error instanceof ZodError) {
       return next(new ValidationError(error.issues));
     }
     return next(error);
   }
+};
 
-}
-
-export { registerUser, loginUser, auth, verifyEmail, resendEmail, forgotPassword , resetPassword};
+export {
+  registerUser,
+  loginUser,
+  auth,
+  verifyEmail,
+  resendEmail,
+  forgotPassword,
+  resetPassword,
+};
