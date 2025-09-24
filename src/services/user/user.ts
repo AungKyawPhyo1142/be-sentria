@@ -2,7 +2,7 @@ import prisma from '@/libs/prisma';
 import { NotFoundError } from '@/utils/errors';
 
 type UserDetails = {
-  id: number;
+  id: string;
   firstName: string;
   lastName: string;
   profile_image: string | null;
@@ -30,7 +30,7 @@ type UserUpdateData = Partial<{
   country: string;
 }>;
 
-const details = async (userId: number) => {
+const details = async (userId: string) => {
   const user = await prisma.user.findFirst({
     where: { id: userId, deleted_at: null },
   });
@@ -59,7 +59,7 @@ const details = async (userId: number) => {
   return userInfo;
 };
 
-const update = async (id: number, updateData: UserUpdateData) => {
+const update = async (id: string, updateData: UserUpdateData) => {
   const user = await prisma.user.findUnique({ where: { id: id } });
 
   if (!user) {
@@ -81,7 +81,7 @@ const update = async (id: number, updateData: UserUpdateData) => {
   return updatedUser;
 };
 
-const softDelete = async (id: number) => {
+const softDelete = async (id: string) => {
   const user = await prisma.user.findUnique({ where: { id } });
 
   if (!user) {
@@ -99,7 +99,7 @@ const softDelete = async (id: number) => {
   return deletedUser;
 };
 
-const recover = async (id: number) => {
+const recover = async (id: string) => {
   const user = await prisma.user.findUnique({ where: { id } });
 
   if (!user || user.deleted_at === null) {
