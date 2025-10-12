@@ -8,7 +8,7 @@ generator client {
 }
 
 model User {
-    id                Int       @id @default(autoincrement())
+    id                String    @id @default(uuid())
     email             String    @unique
     email_verified    Boolean   @default(false)
     email_verified_at DateTime?
@@ -38,8 +38,8 @@ model User {
 }
 
 model Follow {
-    followerId  Int
-    followingId Int
+    followerId  String
+    followingId String
 
     follower  User @relation("Followees", fields: [followerId], references: [id], onDelete: Cascade)
     following User @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
@@ -82,8 +82,8 @@ model Report {
     externalStorageId String? @unique // mongoDB document id
     errorMessage      String?
 
-    generatedById Int?
-    generatedBy   User? @relation("GeneratedByUser", fields: [generatedById], references: [id], onDelete: SetNull) // user who generated the report, set to null if user is deleted
+    generatedById String?
+    generatedBy   User?   @relation("GeneratedByUser", fields: [generatedById], references: [id], onDelete: SetNull) // user who generated the report, set to null if user is deleted
 
     created_at   DateTime  @default(now())
     updated_at   DateTime  @updatedAt
@@ -101,7 +101,7 @@ model Report {
     votes    ReportVote[]
     comments ReportComment[]
     User     User?           @relation(fields: [userId], references: [id])
-    userId   Int?
+    userId   String?
 
     @@index([generatedById])
     @@index([status])
@@ -118,7 +118,7 @@ model ReportVote {
     id       String   @id @default(cuid())
     voteType VoteType
 
-    userId   Int
+    userId   String
     user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
     reportId String
     report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
@@ -136,8 +136,8 @@ model ReportComment {
     isEdited  Boolean @default(false)
     isDeleted Boolean @default(false) // For soft deletion of comments
 
-    userId Int
-    user   User @relation(fields: [userId], references: [id], onDelete: Cascade) // If user deleted, their comments are removed
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade) // If user deleted, their comments are removed
 
     reportId String
     report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade) // If report deleted, comments for it are removed
@@ -171,7 +171,7 @@ enum ResourceStatus {
 model Resource {
     id            String         @id @default(cuid())
     name          String // Added name field
-    generatedById Int?
+    generatedById String?
     generatedBy   User?          @relation("GeneratedByUser", fields: [generatedById], references: [id], onDelete: SetNull)
     location      Json? // Geometry type for PostgreSQL - now optional
     description   String?        @db.Text // Now optional
@@ -216,8 +216,8 @@ model ActivityFeedPost {
     isActive  Boolean @default(true)
     isDeleted Boolean @default(false)
 
-    postedById Int
-    postedBy   User @relation(fields: [postedById], references: [id], onDelete: Cascade)
+    postedById String
+    postedBy   User   @relation(fields: [postedById], references: [id], onDelete: Cascade)
 
     helpItems HelpItem[]
 
