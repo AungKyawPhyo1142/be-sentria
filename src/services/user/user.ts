@@ -1,20 +1,20 @@
 import prisma from '@/libs/prisma';
 import { NotFoundError } from '@/utils/errors';
 
-type UserDetails = {
-  id: string;
+export type UserDetails = {
+  id: string; // Changed from number to string
   firstName: string;
   lastName: string;
   profile_image: string | null;
   email: string;
-  password: string;
+  // password should not be exposed
   email_verified: boolean;
   email_verified_at: Date | null;
   verified_profile: boolean;
   birthday: Date | null;
   country: string;
   created_at: Date;
-  updated_at: Date | null;
+  updated_at: Date;
   deleted_at: Date | null;
 };
 
@@ -23,8 +23,6 @@ type UserUpdateData = Partial<{
   lastName: string;
   profile_image: string | null;
   email: string;
-  email_verified: boolean;
-  password: string;
   verified_profile: boolean;
   birthday: Date | null;
   country: string;
@@ -45,14 +43,13 @@ const details = async (userId: string) => {
     lastName: user.lastName,
     profile_image: user.profile_image || null,
     email: user.email,
-    password: user.password,
     email_verified: user.email_verified || false,
     email_verified_at: user.email_verified_at || null,
     verified_profile: user.verified_profile || false,
     birthday: user.birthday || null,
     country: user.country,
     created_at: user.created_at,
-    updated_at: user.updated_at || null,
+    updated_at: user.updated_at,
     deleted_at: user.deleted_at || null,
   };
 

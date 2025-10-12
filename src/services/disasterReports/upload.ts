@@ -16,7 +16,7 @@ const supabase = createClient(
 
 export const uploadToSupabase = async (
   file: Express.Multer.File,
-  userId: number,
+  userId: string,
 ) => {
   try {
     const optimizedBuffer = await sharp(file.buffer)
