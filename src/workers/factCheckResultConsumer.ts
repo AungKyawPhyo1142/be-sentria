@@ -61,9 +61,8 @@ async function connectAndConsumeResults(attempt = 1): Promise<void> {
         'RABBITMQ_URL not set for results consumer',
       ); //
     }
-    // Type assertion to Connection if `amqp.connect` is typed as ChannelModel
-    const newConn = await amqp.connect(ENV.RABBITMQ_URL); //
-    resultsConsumerConnection = newConn;
+
+    resultsConsumerConnection = await amqp.connect(ENV.RABBITMQ_URL); //
 
     resultsConsumerChannel = await resultsConsumerConnection.createChannel();
     logger.info(

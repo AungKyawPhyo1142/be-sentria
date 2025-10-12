@@ -20,7 +20,6 @@ const details = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.params.id;
 
-
     const response = await userService.details(userId);
     return res.status(200).json(response);
   } catch (error) {
@@ -66,7 +65,6 @@ const softDelete = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.params.id;
 
-  
     const response = await userService.softDelete(userId);
     return res.status(200).json(response);
   } catch (error) {
@@ -78,7 +76,6 @@ const recover = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.params.id;
 
-   
     const response = await userService.recover(userId);
     return res.status(200).json(response);
   } catch (error) {

@@ -81,7 +81,10 @@ export async function CreateReport(
       try {
         logger.info(`Uploading report image for user: ${user.id}`);
         const uploadPromises = req?.files?.map(async (file, index) => {
-          const uploadResponse = await uploadToSupabase(file, user.id as string);
+          const uploadResponse = await uploadToSupabase(
+            file,
+            user.id as string,
+          );
           return {
             type: 'IMAGE' as 'IMAGE' | 'VIDEO',
             url: uploadResponse.url,
