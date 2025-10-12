@@ -18,14 +18,8 @@ const userDetailSchema = object({
 
 const details = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = parseInt(req.params.id, 10);
-    if (isNaN(userId)) {
-      return res.status(400).json({
-        code: 'INVALID_USER_ID',
-        message: 'User ID must be a valid number',
-        status: 'ERROR',
-      });
-    }
+    const userId = req.params.id;
+
 
     const response = await userService.details(userId);
     return res.status(200).json(response);
@@ -36,7 +30,7 @@ const details = async (req: Request, res: Response, next: NextFunction) => {
 
 const update = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = parseInt(req.params.id, 10);
+    const userId = req.params.id;
     const updateData = userDetailSchema.parse(req.body);
 
     if (req.file) {
@@ -70,15 +64,9 @@ const update = async (req: Request, res: Response, next: NextFunction) => {
 
 const softDelete = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = parseInt(req.params.id, 10);
+    const userId = req.params.id;
 
-    if (isNaN(userId)) {
-      return res.status(400).json({
-        code: 'INVALID_USER_ID',
-        message: 'User ID must be a valid number',
-        status: 'ERROR',
-      });
-    }
+  
     const response = await userService.softDelete(userId);
     return res.status(200).json(response);
   } catch (error) {
@@ -88,16 +76,9 @@ const softDelete = async (req: Request, res: Response, next: NextFunction) => {
 
 const recover = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = parseInt(req.params.id, 10);
+    const userId = req.params.id;
 
-    if (isNaN(userId)) {
-      return res.status(400).json({
-        code: 'INVALID_USER_ID',
-        message: 'User ID must be a valid number',
-        status: 'ERROR',
-      });
-    }
-
+   
     const response = await userService.recover(userId);
     return res.status(200).json(response);
   } catch (error) {

@@ -262,7 +262,7 @@ export async function getAllDisasterReports(cursor?: string, limit?: string) {
     const UserIds = [
       ...new Set(
         paginatedReports
-          .map((report) => report.reporterUserId)
+          .map((report) => report.reporterUserId as string | null)
           .filter((id) => id != null),
       ),
     ];

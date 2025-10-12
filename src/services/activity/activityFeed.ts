@@ -9,7 +9,7 @@ import { z } from 'zod';
 
 type CreatePostPayload = z.infer<typeof CreateActivityFeedPostSchema>;
 
-export async function CreatePost(userId: number, payload: CreatePostPayload) {
+export async function CreatePost(userId: string, payload: CreatePostPayload) {
   const { activityType, description, location, helpItems } = payload;
 
   const newPost = await prisma.$transaction(async (tx) => {
@@ -88,7 +88,7 @@ type UpdatePostPayload = z.infer<typeof UpdateActivityFeedPostSchema>;
 
 export async function updatePost(
   postId: string,
-  userId: number,
+  userId: string,
   payload: UpdatePostPayload,
 ) {
   // 1. First, verify the post exists and the user is the owner
@@ -162,7 +162,7 @@ export async function updatePost(
   return updatedPost;
 }
 
-export async function deletePost(postId: string, userId: number) {
+export async function deletePost(postId: string, userId: string) {
   // 1. Verify the post exists and the user is the owner
   const post = await prisma.activityFeedPost.findUnique({
     where: { id: postId },

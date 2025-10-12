@@ -17,7 +17,7 @@ type UserInfo = {
   firstName: string;
   lastName: string;
   username: string;
-  userId: number;
+  userId: string;
 };
 
 const auth = (user: Express.Request['user']) => {
@@ -153,7 +153,7 @@ const loginUser = async (
 
 const verifyEmail = async (token: string) => {
   try {
-    const decoded = jwt.verify(token, ENV.JWT_SECRET) as { userId: number };
+    const decoded = jwt.verify(token, ENV.JWT_SECRET) as { userId: string };
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
     });
@@ -275,7 +275,7 @@ const forgotPassword = async (email: string) => {
 
 const resetPassword = async (token: string, password: string) => {
   try {
-    const decoded = jwt.verify(token, ENV.JWT_SECRET) as { userId: number };
+    const decoded = jwt.verify(token, ENV.JWT_SECRET) as { userId: string };
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
     });
