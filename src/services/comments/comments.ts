@@ -7,6 +7,7 @@ import { COMMENT_REPLY_COLLECTION_NAME } from '../commentReplies/commentReplies'
 import { deleteFromSupabase as deleteCommentReplyFromSupabase } from '../commentReplies/upload';
 import { DISASTER_COLLECTION_NAME } from '../disasterReports/disasterReports';
 import { deleteFromSupabase } from './upload';
+import * as userService from '@/services/user/user'
 
 export interface ValidatedCommentPayload {
   post_id: string;
@@ -24,6 +25,13 @@ export async function createComment(
   const requestingUserId = user.id;
 
   try {
+
+    const user = await userService.details(requestingUserId)
+
+    if (!user) {
+      throw new NotFoundError('User not found for this comment');
+    }
+
     const db = await getMongoDB();
     const commentCollection: Collection = db.collection(
       COMMENT_COLLECTION_NAME,
@@ -31,13 +39,19 @@ export async function createComment(
     const now = new Date();
 
     const mongoCommentDocument = {
-      userId: requestingUserId,
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profile_image: user.profile_image || null,
+      },
       postId: payload.post_id,
       comment: payload.comment,
       media: payload.media,
       commentTimestamp: now,
       systemCreatedAt: now,
       systemUpdatedAt: now,
+
     };
 
     const result = await commentCollection.insertOne(mongoCommentDocument);
@@ -46,9 +60,7 @@ export async function createComment(
       throw new InternalServerError('Error creating resource in mongoDB');
     }
 
-    return {
-      message: `Comment for ${payload.post_id} created successfully`,
-    };
+    return result
   } catch (error) {
     logger.error(`Error creating comments: ${error}`);
     throw error;
@@ -154,7 +166,9 @@ export async function getCommentById(commentId: string) {
       throw new NotFoundError('Comment not found in mongoDB');
     }
 
-    return result;
+
+
+    return result
   } catch (error) {
     logger.error(`Error getting comment by id: ${error}`);
     throw error;
