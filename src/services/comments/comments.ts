@@ -117,7 +117,7 @@ export async function updateComment(
       throw new NotFoundError('Comment not found');
     }
 
-    if (existingComment.userId !== user.id) {
+    if (existingComment.user.id !== user.id) {
       throw new Error(
         'Unauthorized: Only comment owner can update this comment',
       );
@@ -127,13 +127,10 @@ export async function updateComment(
       { _id: new ObjectId(commentId) },
       {
         $set: {
-          userId: user.id,
-          postId: payload.post_id,
           comment: payload.comment,
           media: payload.media,
           systemUpdatedAt: new Date(),
           commentTimestamp: new Date(),
-          systemCreatedAt: new Date(),
         },
       },
     );
@@ -186,12 +183,16 @@ export async function deleteComment(commentId: string, user: User) {
       _id: new ObjectId(commentId),
     });
 
+    logger.info('comment: ', comment);
+
     if (!comment) {
       throw new NotFoundError('Comment not found');
     }
 
+    // comment.userId is a ObjectId
+
     // user is comment owner or post owner
-    const isCommentOwner = comment.userId === user.id;
+    const isCommentOwner = comment.user.id === user.id;
 
     let isPostOwner = false;
     if (!isCommentOwner) {
@@ -204,7 +205,7 @@ export async function deleteComment(commentId: string, user: User) {
 
       // check it is post owner or not
       if (post) {
-        isPostOwner = post.userId === user.id;
+        isPostOwner = post.reporterUserId === user.id;
       }
     }
 

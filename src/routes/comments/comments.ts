@@ -5,25 +5,32 @@ import { Router } from 'express';
 
 const router = Router();
 
+// Get all comments
 router.get('/', secureRoute(), commentController.GetComments);
+
+// Get comments by post
+router.get('/post/:postId', secureRoute(), commentController.GetCommentsByPostId);
+
+// Delete a comment
+router.delete('/:id', secureRoute(),commentController.DeleteComment);
+
+// Get single comment
 router.get('/:id', secureRoute(), commentController.GetCommentById);
-router.get(
-  '/post/:postId',
-  secureRoute(),
-  commentController.GetCommentsByPostId,
-);
+
+// Create a comment
 router.post(
   '/create',
   secureRoute(),
   upload.single('commentsImage'),
-  commentController.CreateComment,
+  commentController.CreateComment
 );
+
+// Update a comment
 router.patch(
   '/update/:id',
   secureRoute(),
   upload.single('commentsImage'),
-  commentController.UpdateComment,
+  commentController.UpdateComment
 );
-router.delete('/delete/:id', secureRoute(), commentController.DeleteComment);
 
 export default router;
