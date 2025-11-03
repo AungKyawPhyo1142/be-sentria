@@ -1,6 +1,5 @@
 import { getMongoDB } from '@/libs/mongo';
 import logger from '@/logger';
-import * as userService from '@/services/user/user';
 import { InternalServerError, NotFoundError } from '@/utils/errors';
 import { User } from '@prisma/client';
 import { Collection, ObjectId } from 'mongodb';
@@ -8,6 +7,7 @@ import { COMMENT_REPLY_COLLECTION_NAME } from '../commentReplies/commentReplies'
 import { deleteFromSupabase as deleteCommentReplyFromSupabase } from '../commentReplies/upload';
 import { DISASTER_COLLECTION_NAME } from '../disasterReports/disasterReports';
 import { deleteFromSupabase } from './upload';
+import * as userService from '@/services/user/user'
 
 export interface ValidatedCommentPayload {
   post_id: string;
@@ -25,7 +25,8 @@ export async function createComment(
   const requestingUserId = user.id;
 
   try {
-    const user = await userService.details(requestingUserId);
+
+    const user = await userService.details(requestingUserId)
 
     if (!user) {
       throw new NotFoundError('User not found for this comment');
@@ -50,6 +51,7 @@ export async function createComment(
       commentTimestamp: now,
       systemCreatedAt: now,
       systemUpdatedAt: now,
+
     };
 
     const result = await commentCollection.insertOne(mongoCommentDocument);
@@ -58,7 +60,7 @@ export async function createComment(
       throw new InternalServerError('Error creating resource in mongoDB');
     }
 
-    return result;
+    return result
   } catch (error) {
     logger.error(`Error creating comments: ${error}`);
     throw error;
@@ -115,7 +117,7 @@ export async function updateComment(
       throw new NotFoundError('Comment not found');
     }
 
-    if (existingComment.userId !== user.id) {
+    if (existingComment.user.id !== user.id) {
       throw new Error(
         'Unauthorized: Only comment owner can update this comment',
       );
@@ -125,13 +127,10 @@ export async function updateComment(
       { _id: new ObjectId(commentId) },
       {
         $set: {
-          userId: user.id,
-          postId: payload.post_id,
           comment: payload.comment,
           media: payload.media,
           systemUpdatedAt: new Date(),
           commentTimestamp: new Date(),
-          systemCreatedAt: new Date(),
         },
       },
     );
@@ -164,7 +163,9 @@ export async function getCommentById(commentId: string) {
       throw new NotFoundError('Comment not found in mongoDB');
     }
 
-    return result;
+
+
+    return result
   } catch (error) {
     logger.error(`Error getting comment by id: ${error}`);
     throw error;
@@ -182,12 +183,16 @@ export async function deleteComment(commentId: string, user: User) {
       _id: new ObjectId(commentId),
     });
 
+    logger.info('comment: ', comment);
+
     if (!comment) {
       throw new NotFoundError('Comment not found');
     }
 
+    // comment.userId is a ObjectId
+
     // user is comment owner or post owner
-    const isCommentOwner = comment.userId === user.id;
+    const isCommentOwner = comment.user.id === user.id;
 
     let isPostOwner = false;
     if (!isCommentOwner) {
@@ -200,7 +205,7 @@ export async function deleteComment(commentId: string, user: User) {
 
       // check it is post owner or not
       if (post) {
-        isPostOwner = post.userId === user.id;
+        isPostOwner = post.reporterUserId === user.id;
       }
     }
 
