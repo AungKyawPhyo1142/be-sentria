@@ -118,7 +118,10 @@ export async function CreateReport(
       try {
         logger.info(`Uploading report image for user: ${user.id}`);
         const uploadPromises = req?.files?.map(async (file, index) => {
-          const uploadResponse = await uploadToSupabase(file, user.id);
+          const uploadResponse = await uploadToSupabase(
+            file,
+            user.id as string,
+          );
           return {
             type: 'IMAGE' as 'IMAGE' | 'VIDEO',
             url: uploadResponse.url,
@@ -264,7 +267,7 @@ export async function UpdateDisasterReport(
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
       try {
         const uploadPromises = req.files.map(async (file, index) => {
-          const uploadResult = await uploadToSupabase(file, user.id);
+          const uploadResult = await uploadToSupabase(file, user.id as string);
           return {
             type: 'IMAGE' as 'IMAGE' | 'VIDEO',
             url: uploadResult.url,

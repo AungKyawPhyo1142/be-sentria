@@ -1,10 +1,10 @@
 import * as followersService from '@/services/followers/followers';
 import { User } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
-import { ZodError, number, object } from 'zod';
+import { ZodError, object, string } from 'zod';
 
 const followSchema = object({
-  followingId: number(),
+  followingId: string(),
 });
 
 const followUser = async (req: Request, res: Response, next: NextFunction) => {

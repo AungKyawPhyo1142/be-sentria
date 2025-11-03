@@ -1,5 +1,6 @@
 import { getMongoDB } from '@/libs/mongo';
 import logger from '@/logger';
+import * as userService from '@/services/user/user';
 import { InternalServerError, NotFoundError } from '@/utils/errors';
 import { User } from '@prisma/client';
 import { Collection, ObjectId } from 'mongodb';
@@ -24,6 +25,12 @@ export async function createComment(
   const requestingUserId = user.id;
 
   try {
+    const user = await userService.details(requestingUserId);
+
+    if (!user) {
+      throw new NotFoundError('User not found for this comment');
+    }
+
     const db = await getMongoDB();
     const commentCollection: Collection = db.collection(
       COMMENT_COLLECTION_NAME,
@@ -31,7 +38,12 @@ export async function createComment(
     const now = new Date();
 
     const mongoCommentDocument = {
-      userId: requestingUserId,
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profile_image: user.profile_image || null,
+      },
       postId: payload.post_id,
       comment: payload.comment,
       media: payload.media,
@@ -46,9 +58,7 @@ export async function createComment(
       throw new InternalServerError('Error creating resource in mongoDB');
     }
 
-    return {
-      message: `Comment for ${payload.post_id} created successfully`,
-    };
+    return result;
   } catch (error) {
     logger.error(`Error creating comments: ${error}`);
     throw error;

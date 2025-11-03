@@ -11,6 +11,8 @@ router.post(
   upload.array('reportImage'),
   reportController.CreateReport,
 );
+// voting
+router.post('/vote/:id', secureRoute(), reportController.voteOnReport);
 router.patch(
   '/update/:id',
   secureRoute(),
@@ -24,8 +26,5 @@ router.delete(
   secureRoute(),
   reportController.DeleteDisasterReport,
 );
-
-// voting
-router.post('/:id/vote', secureRoute(), reportController.voteOnReport)
 
 export default router;
