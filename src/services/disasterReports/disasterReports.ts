@@ -16,7 +16,13 @@ import {
   InternalServerError,
   NotFoundError,
 } from '@/utils/errors';
-import { ReportDBStatus, ReportStatus, ReportType, User } from '@prisma/client';
+import {
+  ReportDBStatus,
+  ReportStatus,
+  ReportType,
+  User,
+  VoteType,
+} from '@prisma/client';
 import { Collection, Document, Filter, ObjectId } from 'mongodb';
 import { COMMENT_REPLY_COLLECTION_NAME } from '../commentReplies/commentReplies';
 import { COMMENT_COLLECTION_NAME } from '../comments/comments';
@@ -35,6 +41,12 @@ export interface ValidatedDisasterPayload {
   country: string;
   city: string;
   media: Array<{ type: 'IMAGE' | 'VIDEO'; url: string; caption?: string }>;
+}
+
+interface CastVoteParams {
+  userId: string;
+  reportId: string;
+  voteType: VoteType;
 }
 
 // factcheck score weights
@@ -704,6 +716,117 @@ export async function updateDisasterReport(
     logger.error(`Error updating disaster report: ${error}`);
     throw error;
   }
+}
+
+export async function castVote({ userId, reportId, voteType }: CastVoteParams) {
+  const db = await getMongoDB();
+
+  const disasterCollection: Collection<Document> = db.collection(
+    DISASTER_COLLECTION_NAME,
+  );
+
+  return prisma.$transaction(async (tx) => {
+    const report = await tx.report.findUnique({
+      where: { id: reportId },
+    });
+    if (!report || !report.externalStorageId) {
+      throw new NotFoundError('Report not found in postgres or mongo');
+    }
+
+    // const mongoDocId = report.externalStorageId;
+
+    // check if user is already voted on this report
+    const existingVote = await tx.reportVote.findUnique({
+      where: {
+        userId_reportId: { userId, reportId },
+      },
+    });
+    if (existingVote) {
+      //user has voted before
+      // first undo the prev-vote in BOTH databases
+
+      const decrementFieldPg =
+        existingVote.voteType === 'UPVOTE' ? 'upvoteCount' : 'downvoteCount';
+      const decrementFieldMongo =
+        existingVote.voteType === 'UPVOTE'
+          ? 'factCheck.communityScore.upvotes'
+          : 'factCheck.communityScore.downvotes';
+
+      // decrement counter in postgres
+      await tx.report.update({
+        where: { id: reportId },
+        data: {
+          [decrementFieldPg]: {
+            decrement: 1,
+          },
+        },
+      });
+
+      // decrement counter in Mongo
+      await disasterCollection.updateOne(
+        {
+          postgresReportId: reportId, // find the document by stable PG_ID
+        },
+        {
+          $inc: {
+            [decrementFieldMongo]: -1,
+          },
+        },
+      );
+
+      // then delete the existing vote record from postgres
+      await tx.reportVote.delete({
+        where: {
+          id: existingVote.id,
+        },
+      });
+
+      // If the user is casting the same vote again (e.g., clicking 'upvote' when already upvoted),
+      // it means they are REMOVING their vote. We've already done that, so we can stop here.
+      if (existingVote.voteType === voteType) {
+        logger.info(
+          `User ${userId} removed their ${voteType} vote on report ${reportId}`,
+        );
+        return tx.report.findUnique({ where: { id: reportId } });
+      }
+    }
+
+    // this part runs if it's new vote OR if the user is changing their vote
+    logger.info(`User ${userId} cast ${voteType} vote on report ${reportId}`);
+
+    await tx.reportVote.create({
+      data: {
+        userId,
+        reportId,
+        voteType,
+      },
+    });
+
+    const incrementFieldPg =
+      voteType === 'UPVOTE' ? 'upvoteCount' : 'downvoteCount';
+    const incrementFieldMongo =
+      voteType === 'UPVOTE'
+        ? 'factCheck.communityScore.upvotes'
+        : 'factCheck.communityScore.downvotes';
+
+    // increment in MongoDB
+    await disasterCollection.updateOne(
+      { postgresReportId: reportId },
+      { $inc: { [incrementFieldMongo]: 1 } },
+    );
+
+    // increment the new vote count in the ReportModel
+    const updatedReport = await tx.report.update({
+      where: { id: reportId },
+      data: {
+        [incrementFieldPg]: {
+          increment: 1,
+        },
+      },
+    });
+
+    return updatedReport;
+  });
 }
 
 export async function calculateAndUpdateTotalScore(reportId: string) {

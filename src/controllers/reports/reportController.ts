@@ -8,9 +8,9 @@ import {
   NotFoundError,
   ValidationError,
 } from '@/utils/errors';
-import { ReportType } from '@prisma/client';
+import { ReportType, VoteType } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
-import { object, string, z } from 'zod';
+import { nativeEnum, object, string, z } from 'zod';
 
 const CreateReportSchema = object({
   name: string()
@@ -24,6 +24,43 @@ const CreateReportRequestSchema = z.discriminatedUnion('reportType', [
     parameters: DisasterIncidentParametersSchema,
   }),
 ]);
+
+const voteSchema = object({
+  voteType: nativeEnum(VoteType, {
+    errorMap: () => ({
+      message: 'Vote type muist be either UPVOTE or DOWNVOTE',
+    }),
+  }),
+});
+
+export async function voteOnReport(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const user = req.user;
+    if (!user) {
+      throw new AuthenticationError('User not authenticated');
+    }
+    const { id: reportId } = req.params;
+    const { voteType } = voteSchema.parse(req.body);
+    const updatedReport = await disasterReportService.castVote({
+      userId: user.id,
+      reportId,
+      voteType,
+    });
+    return res.status(200).json(updatedReport);
+  } catch (e) {
+    if (e instanceof ValidationError) {
+      return next(new BadRequestError(e.message));
+    } else if (e instanceof NotFoundError) {
+      return next(new NotFoundError(e.message));
+    } else {
+      return next(e);
+    }
+  }
+}
 
 export async function CreateReport(
   req: Request,
