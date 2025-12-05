@@ -4,29 +4,14 @@ import prisma from '@/libs/prisma';
 import { publishToQueue } from '@/libs/rabbitmqClient';
 import { emitFactCheckUpdateToRoom } from '@/libs/socketManager';
 import logger from '@/logger';
-import {
-  DISASTER_INCIDENT_TYPE,
-  DISASTER_SEVERITY,
-  DisasterReportJobPayload,
-  MongoDBReportSchema,
-} from '@/types/reports';
-import {
-  AppError,
-  AuthenticationError,
-  InternalServerError,
-  NotFoundError,
-} from '@/utils/errors';
-import {
-  ReportDBStatus,
-  ReportStatus,
-  ReportType,
-  User,
-  VoteType,
-} from '@prisma/client';
+import { DISASTER_INCIDENT_TYPE, DISASTER_SEVERITY, DisasterReportJobPayload, MongoDBReportSchema } from '@/types/reports';
+import { AppError, AuthenticationError, InternalServerError, NotFoundError } from '@/utils/errors';
+import { ReportDBStatus, ReportStatus, ReportType, User, VoteType } from '@prisma/client';
 import { Collection, Document, Filter, ObjectId } from 'mongodb';
 import { COMMENT_REPLY_COLLECTION_NAME } from '../commentReplies/commentReplies';
 import { COMMENT_COLLECTION_NAME } from '../comments/comments';
 import { deleteFromSupabase } from './upload';
+
 
 export interface ValidatedDisasterPayload {
   reportName: string;
@@ -664,10 +649,16 @@ export async function updateDisasterReport(
           incidentType: payload.incidentType,
           severity: payload.severity,
           incidentTimestamp: payload.incidentTimestamp,
-          location: payload.location,
+          // location: payload.location,
+          location: {
+            city: payload.city,
+            country: payload.country,
+            latitude: payload.location.coordinates[1],
+            longtitude: payload.location.coordinates[0],
+          },
         },
-        country: payload.country,
-        city: payload.city,
+        // country: payload.country,
+        // city: payload.city,
         updated_at: new Date(),
       },
     });
@@ -687,9 +678,16 @@ export async function updateDisasterReport(
           incidentType: payload.incidentType,
           severity: payload.severity,
           incidentTimestamp: payload.incidentTimestamp,
-          location: payload.location,
-          country: payload.country,
-          city: payload.city,
+          // location: payload.location,
+          // country: payload.country,
+          // city: payload.city,
+          location:{
+            city: payload.city,
+            country: payload.country,
+            latitude: payload.location.coordinates[1],
+            longtitude: payload.location.coordinates[0],
+
+          },
           media: payload.media,
           systemUpdatedAt: new Date(),
         },
