@@ -22,7 +22,7 @@ interface DisasterReportJobPayload {
   city: string;
   country: string;
   media: Array<{ type: 'IMAGE' | 'VIDEO'; url: string; caption?: string }>;
-  reporterUserId: number;
+  reporterUserId: string;
 }
 
 // for disaster (parameters part of the request)
@@ -69,7 +69,7 @@ const now = new Date();
 
 const MongoDBReportSchema = DisasterIncidentParametersSchema.extend({
   postgresReportId: z.string(),
-  reporterUserId: z.number(),
+  reporterUserId: z.string(),
   reportName: z.string().min(3, 'Report name is too short'),
   factCheck: z.object({
     communityScore: z.object({

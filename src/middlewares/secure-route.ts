@@ -6,7 +6,7 @@ import { NextFunction, Request, Response } from 'express';
 import jwt, { TokenExpiredError } from 'jsonwebtoken';
 
 interface JwtPayload {
-  userId: number;
+  userId: string;
 }
 
 const secureRoute = () => {

@@ -1,227 +1,158 @@
 import logger from '@/logger';
-import * as activityService from '@/services/activity/activity';
 import {
-  AuthenticationError,
-  BadRequestError,
-  NotFoundError,
-  ValidationError,
-} from '@/utils/errors';
+  CreatePost,
+  deletePost,
+  getAllPosts,
+  getPostById,
+  updatePost,
+} from '@/services/activity/activityFeed';
+import { AuthenticationError, ValidationError } from '@/utils/errors';
+import { ActivityType, HelpType } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
-import { object, string, z } from 'zod';
+import { z } from 'zod';
 
-enum ActivityType {
-  SHELTER = 'SHELTER',
-  WATER = 'WATER',
-  FOOD = 'FOOD',
-  WIFI = 'WIFI',
-}
+const HelpItemSchema = z
+  .object({
+    helpType: z.nativeEnum(HelpType),
+    quantity: z.number().int().min(1).optional(),
+  })
+  .refine(
+    (data) => {
+      // if HelpType is not WIFI, qty is required
+      return data.helpType === 'WIFI' ? true : data.quantity !== undefined;
+    },
+    {
+      message: 'Quantity is required for FOOD, WATER, and SHELTER types',
+      path: ['quantity'],
+    },
+  );
 
-const CreateActivitySchema = object({
-  name: string().min(3, 'Activity name is too short').max(150),
-});
-
-const ActivityParametersSchema = object({
-  location: object({
-    city: string().min(1),
-    country: string().min(1),
+export const CreateActivityFeedPostSchema = z.object({
+  activityType: z.nativeEnum(ActivityType),
+  description: z
+    .string()
+    .min(5, 'Description must be at least 5 characters long'),
+  location: z.object({
+    city: z.string().min(2, 'City must be at least 2 characters long'),
+    country: z.string().min(2, 'Country must be at least 2 characters long'),
     latitude: z.number().min(-90).max(90),
     longitude: z.number().min(-180).max(180),
   }),
-  address: object({
-    street: string().optional(),
-    district: string().optional(),
-    fullAddress: string().optional(),
-  }).optional(),
-  description: string().min(10).max(5000),
+  helpItems: z
+    .array(HelpItemSchema)
+    .min(1, 'At least one help item is required'),
 });
 
-const CreateActivityRequestSchema = z.discriminatedUnion('activityType', [
-  CreateActivitySchema.extend({
-    activityType: z.literal(ActivityType.SHELTER),
-    parameters: ActivityParametersSchema,
-  }),
-  CreateActivitySchema.extend({
-    activityType: z.literal(ActivityType.WATER),
-    parameters: ActivityParametersSchema,
-  }),
-  CreateActivitySchema.extend({
-    activityType: z.literal(ActivityType.FOOD),
-    parameters: ActivityParametersSchema,
-  }),
-  CreateActivitySchema.extend({
-    activityType: z.literal(ActivityType.WIFI),
-    parameters: ActivityParametersSchema,
-  }),
-]);
-
-const UpdateActivitySchema = CreateActivityRequestSchema;
-
-export async function CreateActivity(
+export async function createActivityFeedPost(
   req: Request,
   res: Response,
   next: NextFunction,
 ) {
   try {
     const user = req.user;
-    if (!user) throw new AuthenticationError('User not authenticated');
-    if (!user.verified_profile)
-      throw new AuthenticationError('User is not verified');
 
-    if (typeof req.body?.parameters === 'string') {
-      try {
-        req.body.parameters = JSON.parse(req.body.parameters);
-      } catch {
-        return next(new BadRequestError('Invalid parameters JSON'));
-      }
+    if (!user) {
+      throw new AuthenticationError('User not authenticated');
     }
 
-    const validatedRequestBody = CreateActivityRequestSchema.parse(req.body);
-    const { activityType, name } = validatedRequestBody;
-    const parameters = validatedRequestBody.parameters;
+    const validatedBody = CreateActivityFeedPostSchema.parse(req.body);
 
-    const payload: activityService.ValidatedActivityPayload = {
-      description: parameters.description,
-      activityType: activityType,
-      location: {
-        type: 'Point',
-        coordinates: [
-          parameters.location.longitude,
-          parameters.location.latitude,
-        ],
-      },
-      address: {
-        street: parameters.address?.street,
-        district: parameters.address?.district,
-        city: parameters.location.city,
-        country: parameters.location.country,
-        fullAddress: parameters.address?.fullAddress,
-      },
-    };
+    const newPost = await CreatePost(user.id, validatedBody);
 
-    const result = await activityService.createActivity(payload, name, user);
-    return res.status(201).json({ result });
+    return res.status(201).json({ newPost });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return next(new ValidationError(error.issues));
     }
-    logger.error(`Error creating activity: ${error}`);
-    return next(error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error('Error creating report:', err);
+    return next(err);
   }
 }
 
-export async function UpdateActivity(
+export async function getActivityFeedPostById(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { id } = req.params;
+    const post = await getPostById(id);
+    return res.status(200).json({ data: post });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export const UpdateActivityFeedPostSchema =
+  CreateActivityFeedPostSchema.partial();
+
+export async function updateActivityFeedPost(
   req: Request,
   res: Response,
   next: NextFunction,
 ) {
   try {
     const user = req.user;
-    if (!user) throw new AuthenticationError('User not authenticated');
-    if (!user.verified_profile)
-      throw new AuthenticationError('User is not verified');
-
-    const activityId = req.params.id;
-    if (!activityId) throw new NotFoundError('Activity ID is required');
-
-    if (typeof req.body?.parameters === 'string') {
-      try {
-        req.body.parameters = JSON.parse(req.body.parameters);
-      } catch {
-        return next(new BadRequestError('Invalid parameters JSON'));
-      }
+    if (!user) {
+      throw new AuthenticationError('User not authenticated');
     }
 
-    const validated = UpdateActivitySchema.parse(req.body);
-    const { activityType, name, parameters } = validated;
+    const { id: postId } = req.params;
+    const validatedBody = UpdateActivityFeedPostSchema.parse(req.body);
 
-    const payload: activityService.ValidatedActivityPayload = {
-      description: parameters.description,
-      activityType,
-      location: {
-        type: 'Point',
-        coordinates: [
-          parameters.location.longitude,
-          parameters.location.latitude,
-        ],
-      },
-      address: {
-        street: parameters.address?.street,
-        district: parameters.address?.district,
-        city: parameters.location.city,
-        country: parameters.location.country,
-        fullAddress: parameters.address?.fullAddress,
-      },
-    };
+    // Check if there's anything to update
+    if (Object.keys(validatedBody).length === 0) {
+      return res.status(200).json({ message: 'No data provided to update.' });
+    }
 
-    const result = await activityService.updateActivity(
-      activityId,
-      payload,
-      name,
-      user,
-    );
-    return res.status(200).json({ result });
+    const updatedPost = await updatePost(postId, user.id, validatedBody);
+
+    return res.status(200).json({
+      message: 'Activity feed post updated successfully.',
+      data: updatedPost,
+    });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return next(new ValidationError(error.issues));
-    }
-    logger.error(`Error updating activity: ${error}`);
-    return next(error);
+    next(error);
   }
 }
 
-export async function GetActivities(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
-    const skip = req.query.skip ? parseInt(req.query.skip as string) : 0;
-
-    const result = await activityService.getActivities(limit, skip);
-    return res.status(200).json(result);
-  } catch (error) {
-    logger.error(`Error fetching activities: ${error}`);
-    return next(error);
-  }
-}
-
-export async function GetActivityById(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
-    const activityId = req.params.id;
-    if (!activityId) {
-      throw new NotFoundError('Activity ID is required');
-    }
-
-    const result = await activityService.getActivityById(activityId);
-    return res.status(200).json(result);
-  } catch (error) {
-    logger.error(`Error getting activity by id: ${error}`);
-    return next(error);
-  }
-}
-
-export async function DeleteActivity(
+export async function deleteActivityFeedPost(
   req: Request,
   res: Response,
   next: NextFunction,
 ) {
   try {
     const user = req.user;
-    if (!user) throw new AuthenticationError('User not authenticated');
+    if (!user) {
+      throw new AuthenticationError('User not authenticated');
+    }
 
-    const mongoActivityId = req.params.id;
-    if (!mongoActivityId)
-      throw new NotFoundError('Activity MongoDB ID is required');
+    const { id: postId } = req.params;
+    await deletePost(postId, user.id);
 
-    const result = await activityService.deleteActivity(mongoActivityId, user);
+    return res
+      .status(200)
+      .json({ message: 'Activity feed post deleted successfully.' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getAllActivityFeedPosts(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    // Get cursor and limit from query parameters, ensuring they are strings
+    const cursor = req.query.cursor as string | undefined;
+    const limit = req.query.limit as string | undefined;
+
+    const result = await getAllPosts({ cursor, limit });
+
     return res.status(200).json(result);
   } catch (error) {
-    logger.error(`Error deleting activity: ${error}`);
-    return next(error);
+    next(error);
   }
 }

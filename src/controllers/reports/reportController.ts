@@ -8,9 +8,9 @@ import {
   NotFoundError,
   ValidationError,
 } from '@/utils/errors';
-import { ReportType } from '@prisma/client';
+import { ReportType, VoteType } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
-import { object, string, z } from 'zod';
+import { nativeEnum, object, string, z } from 'zod';
 
 const CreateReportSchema = object({
   name: string()
@@ -24,6 +24,43 @@ const CreateReportRequestSchema = z.discriminatedUnion('reportType', [
     parameters: DisasterIncidentParametersSchema,
   }),
 ]);
+
+const voteSchema = object({
+  voteType: nativeEnum(VoteType, {
+    errorMap: () => ({
+      message: 'Vote type muist be either UPVOTE or DOWNVOTE',
+    }),
+  }),
+});
+
+export async function voteOnReport(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const user = req.user;
+    if (!user) {
+      throw new AuthenticationError('User not authenticated');
+    }
+    const { id: reportId } = req.params;
+    const { voteType } = voteSchema.parse(req.body);
+    const updatedReport = await disasterReportService.castVote({
+      userId: user.id,
+      reportId,
+      voteType,
+    });
+    return res.status(200).json(updatedReport);
+  } catch (e) {
+    if (e instanceof ValidationError) {
+      return next(new BadRequestError(e.message));
+    } else if (e instanceof NotFoundError) {
+      return next(new NotFoundError(e.message));
+    } else {
+      return next(e);
+    }
+  }
+}
 
 export async function CreateReport(
   req: Request,
@@ -81,14 +118,17 @@ export async function CreateReport(
       try {
         logger.info(`Uploading report image for user: ${user.id}`);
         const uploadPromises = req?.files?.map(async (file, index) => {
-          const uploadResponse = await uploadToSupabase(file, user.id);
+          const uploadResponse = await uploadToSupabase(
+            file,
+            user.id as string,
+          );
           return {
             type: 'IMAGE' as 'IMAGE' | 'VIDEO',
             url: uploadResponse.url,
             caption:
               Array.isArray(req.body.imageCaptions) &&
-              req.body.imageCaptions[index]
-                ? req.body.imageCaptions[index]
+              typeof req.body.imageCaptions[index] === 'string'
+                ? (req.body.imageCaptions[index] as string)
                 : `Report image ${index + 1}`,
           };
         });
@@ -119,8 +159,9 @@ export async function CreateReport(
     if (error instanceof z.ZodError) {
       return next(new ValidationError(error.issues));
     }
-    logger.error(`Error creating report: ${error}`);
-    return next(error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error('Error creating report:', err);
+    return next(err);
   }
 }
 
@@ -130,15 +171,19 @@ export async function GetAllDiasterReports(
   next: NextFunction,
 ) {
   try {
-    const { cursor, limit } = req.query;
+    const cursor =
+      typeof req.query.cursor === 'string' ? req.query.cursor : undefined;
+    const limit =
+      typeof req.query.limit === 'string' ? req.query.limit : undefined;
     const reports = await disasterReportService.getAllDisasterReports(
-      cursor as string,
-      limit as string,
+      cursor,
+      limit,
     );
     return res.status(200).json({ reports });
   } catch (error) {
-    logger.error(`Error fetching disaster reports: ${error}`);
-    return next(error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error('Error fetching disaster reports:', err);
+    return next(err);
   }
 }
 
@@ -157,8 +202,9 @@ export async function GetDisasterReportById(
     const report = await disasterReportService.getDisasterReportById(reportId);
     return res.status(200).json({ report });
   } catch (error) {
-    logger.error(`Error fetching disaster report by id: ${error}`);
-    return next(error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error('Error fetching disaster report by id:', err);
+    return next(err);
   }
 }
 
@@ -184,8 +230,9 @@ export async function DeleteDisasterReport(
     );
     return res.status(200).json({ report });
   } catch (error) {
-    logger.error(`Error deleting disaster report: ${error}`);
-    return next(error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error('Error deleting disaster report:', err);
+    return next(err);
   }
 }
 
@@ -220,14 +267,14 @@ export async function UpdateDisasterReport(
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
       try {
         const uploadPromises = req.files.map(async (file, index) => {
-          const uploadResult = await uploadToSupabase(file, user.id);
+          const uploadResult = await uploadToSupabase(file, user.id as string);
           return {
             type: 'IMAGE' as 'IMAGE' | 'VIDEO',
             url: uploadResult.url,
             caption:
               Array.isArray(req.body.imageCaptions) &&
-              req.body.imageCaptions[index]
-                ? req.body.imageCaptions[index]
+              typeof req.body.imageCaptions[index] === 'string'
+                ? (req.body.imageCaptions[index] as string)
                 : `Report image ${index + 1}`,
           };
         });
@@ -268,7 +315,8 @@ export async function UpdateDisasterReport(
     if (error instanceof z.ZodError) {
       return next(new ValidationError(error.issues));
     }
-    logger.error(`Error updating disaster report: ${error}`);
-    return next(error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error('Error updating disaster report:', err);
+    return next(err);
   }
 }
