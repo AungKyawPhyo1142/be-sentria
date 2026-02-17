@@ -41,7 +41,6 @@ Before you begin, ensure you have the following installed on your machine:
    ```
 
 2. **Set up environment variables**:
-
    - Copy the `.env.example` file to `.env`.
    - Update only the `DATABASE_URL` in your `.env` file with your local PostgreSQL connection string.
 

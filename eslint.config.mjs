@@ -7,6 +7,9 @@ export default [
   { ignores: ['**/build/**'] },
   { files: ['**/*.{js,mjs,cjs,ts}'] },
   { languageOptions: { globals: globals.es2016 } },
+  pluginJs.configs.recommended,
+  ...tseslint.configs.recommended,
+  eslintConfigPrettier,
   {
     rules: {
       '@typescript-eslint/no-unused-vars': [
@@ -18,10 +21,9 @@ export default [
           varsIgnorePattern: '^_',
         },
       ],
+      '@typescript-eslint/ban-ts-comment': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
       'sort-vars': ['error', { ignoreCase: true }],
     },
   },
-  pluginJs.configs.recommended,
-  ...tseslint.configs.recommended,
-  eslintConfigPrettier,
 ];

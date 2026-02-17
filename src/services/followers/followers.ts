@@ -3,7 +3,7 @@ import logger from '@/logger';
 import { AuthenticationError, InternalServerError } from '@/utils/errors';
 import { Prisma, User } from '@prisma/client';
 
-export async function followUser(follower: User, followingId: number) {
+export async function followUser(follower: User, followingId: string) {
   const followerId = follower.id;
 
   if (followerId === followingId) {
@@ -47,7 +47,7 @@ export async function followUser(follower: User, followingId: number) {
   }
 }
 
-export async function unfollowUser(follower: User, followingId: number) {
+export async function unfollowUser(follower: User, followingId: string) {
   const followerId = follower.id;
 
   try {
@@ -86,7 +86,7 @@ export async function unfollowUser(follower: User, followingId: number) {
   }
 }
 
-export async function getFollowers(userId: number) {
+export async function getFollowers(userId: string) {
   try {
     logger.info(`Fetching followers for user ${userId}`);
 
@@ -102,7 +102,7 @@ export async function getFollowers(userId: number) {
   }
 }
 
-export async function getFollowing(userId: number) {
+export async function getFollowing(userId: string) {
   try {
     logger.info(`Fetching followings for user ${userId}`);
 

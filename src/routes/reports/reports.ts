@@ -11,6 +11,8 @@ router.post(
   upload.array('reportImage'),
   reportController.CreateReport,
 );
+// voting
+router.post('/vote/:id', secureRoute(), reportController.voteOnReport);
 router.patch(
   '/update/:id',
   secureRoute(),

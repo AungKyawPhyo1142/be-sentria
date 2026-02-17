@@ -12,6 +12,7 @@ import {
   closeRabbitMQConnection,
   initRabbitMQConnection,
 } from './libs/rabbitmqClient';
+import { initRedisConnection } from './libs/redisClient';
 import { getIOInstance, initSocketIOServer } from './libs/socketManager';
 import logger from './logger';
 import errorHandler from './middlewares/error-handler';
@@ -19,6 +20,7 @@ import jsonResponse from './middlewares/json-response';
 import networkLog from './middlewares/network-log';
 import gateway from './routes/gateway';
 import { InternalServerError, NotFoundError } from './utils/errors';
+import { startDiasterNotificationConsumer } from './workers/disasterNotificationConsumer';
 import {
   startFactCheckResultConsumer,
   stopFactCheckResultConsumer,
@@ -32,6 +34,14 @@ async function startServer() {
     } else {
       logger.error('MONGO_URI is not defined');
       throw new Error('MONGO_URI is not defined');
+    }
+
+    // connect to redis
+    if (ENV.REDIS_URL) {
+      await initRedisConnection();
+    } else {
+      logger.error('REDIS_URL is not defined');
+      throw new Error('REDIS_URL is not defined');
     }
 
     // connect to rabbitmq
@@ -50,6 +60,19 @@ async function startServer() {
           );
           throw new InternalServerError(
             'Failed to start fact check result consumer',
+          );
+        },
+      );
+
+      // start diaster notification consumer
+      await startDiasterNotificationConsumer().catch(
+        (startDiasterNotificationError) => {
+          logger.error(
+            `Failed to start DiasterNotificationConsumer`,
+            startDiasterNotificationError,
+          );
+          throw new InternalServerError(
+            'Failed to start Diaster Notification Consumer',
           );
         },
       );
@@ -94,10 +117,20 @@ async function startServer() {
     app.use(errorHandler);
 
     httpServer.listen(ENV.PORT, () => {
+      const {
+        // DATABASE_URL,
+        // JWT_SECRET,
+        // REFRESH_TOKEN_SECRET,
+        // RESET_PASSWORD_SENDER_PASSWORD,
+        // MONGO_URI,
+        // RABBITMQ_URL,
+        // REDIS_URL,
+        ...safeEnv
+      } = ENV;
       logger.verbose(
         `ENV is pointing to ${
           ENV.NODE_ENV !== 'production'
-            ? JSON.stringify(ENV, undefined, 2)
+            ? JSON.stringify(safeEnv, undefined, 2)
             : ENV.NODE_ENV
         }`,
       );

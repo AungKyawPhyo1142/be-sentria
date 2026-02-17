@@ -8,18 +8,14 @@ export const sendEmail = async (
   templateGroupName: string,
   sendToList: (string | undefined)[],
   subject: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any,
 ) => {
   const transporter = nodemailer.createTransport({
     host: 'gmail',
     service: 'gmail',
     auth: {
-      type: 'OAuth2',
       user: ENV.RESET_PASSWORD_SENDER_EMAIL,
-      // clientId: process.env.GOOGLE_CLIENT_ID,
-      // clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      accessToken: process.env.GOOGLE_ACCESS_TOKEN,
+      pass: ENV.RESET_PASSWORD_SENDER_PASSWORD,
     },
   });
 
@@ -61,6 +57,7 @@ export const sendEmail = async (
         console.log(`Email sent to ${email}`);
       } catch (error) {
         console.log(`Error sending email to ${email}: ${error}`);
+        throw error;
       }
     }
   }

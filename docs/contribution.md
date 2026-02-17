@@ -5,12 +5,10 @@
 We expect all contributors to follow these guidelines to ensure a consistent and high-quality codebase:
 
 - **Variable Naming**:
-
   - Use "camel case" for variable names. For example, `let helloWorld = 1`.
   - Use "upper case snake case" for constant variables. For example, `const HELLO_WORLD = "A"`.
 
 - **Before pushing to remote**:
-
   - Make sure your local server is pointing to backend's DEV-SERVER
   - Never push directly to the production branch (main)
 

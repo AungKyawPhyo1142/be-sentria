@@ -1,20 +1,20 @@
 import prisma from '@/libs/prisma';
 import { NotFoundError } from '@/utils/errors';
 
-type UserDetails = {
-  id: number;
+export type UserDetails = {
+  id: string; // Changed from number to string
   firstName: string;
   lastName: string;
   profile_image: string | null;
   email: string;
-  password: string;
+  // password should not be exposed
   email_verified: boolean;
   email_verified_at: Date | null;
   verified_profile: boolean;
   birthday: Date | null;
   country: string;
   created_at: Date;
-  updated_at: Date | null;
+  updated_at: Date;
   deleted_at: Date | null;
 };
 
@@ -23,14 +23,12 @@ type UserUpdateData = Partial<{
   lastName: string;
   profile_image: string | null;
   email: string;
-  email_verified: boolean;
-  password: string;
   verified_profile: boolean;
   birthday: Date | null;
   country: string;
 }>;
 
-const details = async (userId: number) => {
+const details = async (userId: string) => {
   const user = await prisma.user.findFirst({
     where: { id: userId, deleted_at: null },
   });
@@ -45,21 +43,20 @@ const details = async (userId: number) => {
     lastName: user.lastName,
     profile_image: user.profile_image || null,
     email: user.email,
-    password: user.password,
     email_verified: user.email_verified || false,
     email_verified_at: user.email_verified_at || null,
     verified_profile: user.verified_profile || false,
     birthday: user.birthday || null,
     country: user.country,
     created_at: user.created_at,
-    updated_at: user.updated_at || null,
+    updated_at: user.updated_at,
     deleted_at: user.deleted_at || null,
   };
 
   return userInfo;
 };
 
-const update = async (id: number, updateData: UserUpdateData) => {
+const update = async (id: string, updateData: UserUpdateData) => {
   const user = await prisma.user.findUnique({ where: { id: id } });
 
   if (!user) {
@@ -81,7 +78,7 @@ const update = async (id: number, updateData: UserUpdateData) => {
   return updatedUser;
 };
 
-const softDelete = async (id: number) => {
+const softDelete = async (id: string) => {
   const user = await prisma.user.findUnique({ where: { id } });
 
   if (!user) {
@@ -99,7 +96,7 @@ const softDelete = async (id: number) => {
   return deletedUser;
 };
 
-const recover = async (id: number) => {
+const recover = async (id: string) => {
   const user = await prisma.user.findUnique({ where: { id } });
 
   if (!user || user.deleted_at === null) {

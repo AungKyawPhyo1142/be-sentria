@@ -20,5 +20,6 @@ router.post(
 
 // -- Websocket Test
 router.post('/test-websocket', exampleController.testWebSocketMessage);
+router.post('/debug/trigger-quake-alert', exampleController.triggerQuakeAlert);
 
 export default router;

@@ -40,26 +40,33 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      # Step 5: Runs the linter and formatter in "check" mode
+      # Step 5: Generate Prisma Client
+      # This is crucial for ensuring the client is up-to-date with the schema.
+      - name: Generate Prisma Client
+        run: pnpm prisma:generate
+
+      # Step 6: Runs the linter and formatter in "check" mode
       # This uses existing 'lint' script from package.json but ensures it doesn't try to write files.
       # The pre-commit hook should have already formatted the code.
       - name: Run Linter & Formatter Check
         run: pnpm format && pnpm lint
 
-      # Step 6: Scans for any hardcoded secrets or keys
+      # Step 7: Scans for any hardcoded secrets or keys
       # This is the security check. It fails the job if secrets are found.
       - name: Run Gitleaks secret scan
         uses: gitleaks/gitleaks-action@v2
+        with:
+          config-path: .gitleaks.toml
         env:
           # This allows the action to post comments on pull requests.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Step 7: Builds the TypeScript project
+      # Step 8: Builds the TypeScript project
       # This verifies that code is free of type errors and can be compiled.
       - name: Build project
         run: pnpm run build
 
-      # Step 8: Runs test suite
+      # Step 9: Runs test suite
       # current "test" script is a placeholder. When you add real tests, they will run here.
       - name: Run tests
         run: pnpm run test
