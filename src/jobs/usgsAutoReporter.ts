@@ -78,10 +78,34 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Parse city/country from the USGS `place` string as a fallback.
+ * Examples:
+ *   "115 km ESE of Petropavlovsk-Kamchatsky, Russia" → { city: "Petropavlovsk-Kamchatsky", country: "Russia" }
+ *   "South Sandwich Islands region" → { city: "South Sandwich Islands region", country: "South Sandwich Islands region" }
+ */
+function parseUsgsPlace(place: string): { city: string; country: string } {
+  // Pattern: "X km DIR of City, Country"
+  const ofMatch = place.match(/of\s+(.+),\s+(.+)$/);
+  if (ofMatch) {
+    return { city: ofMatch[1].trim(), country: ofMatch[2].trim() };
+  }
+  // Pattern: "City, Country" (no distance prefix)
+  const commaMatch = place.match(/^(.+),\s+(.+)$/);
+  if (commaMatch) {
+    return { city: commaMatch[1].trim(), country: commaMatch[2].trim() };
+  }
+  // Fallback: use the entire place string for both
+  return { city: place, country: place };
+}
+
 async function reverseGeocode(
   lat: number,
   lon: number,
+  usgsPlace: string,
 ): Promise<{ city: string; country: string }> {
+  const fallback = parseUsgsPlace(usgsPlace);
+
   try {
     const response = await axios.get<NominatimResponse>(NOMINATIM_BASE_URL, {
       params: {
@@ -102,15 +126,15 @@ async function reverseGeocode(
       address?.village ||
       address?.county ||
       address?.state ||
-      'Unknown';
-    const country = address?.country || 'Unknown';
+      fallback.city;
+    const country = address?.country || fallback.country;
 
     return { city, country };
   } catch (error) {
     logger.warn(
-      `[USGSAutoReporter] Nominatim reverse geocode failed for ${lat},${lon}: ${error instanceof Error ? error.message : String(error)}`,
+      `[USGSAutoReporter] Nominatim reverse geocode failed for ${lat},${lon}, using USGS place fallback: ${error instanceof Error ? error.message : String(error)}`,
     );
-    return { city: 'Unknown', country: 'Unknown' };
+    return fallback;
   }
 }
 
@@ -176,8 +200,8 @@ async function processNewEarthquakes() {
         `[USGSAutoReporter] Processing new event: M${magnitude.toFixed(1)} - ${props.place}`,
       );
 
-      // Reverse geocode with Nominatim (1 req/sec rate limit)
-      const { city, country } = await reverseGeocode(lat, lon);
+      // Reverse geocode with Nominatim (1 req/sec rate limit), falls back to USGS place string
+      const { city, country } = await reverseGeocode(lat, lon, props.place);
       await sleep(1000); // respect Nominatim rate limit
 
       const severity = mapSeverity(magnitude);
