@@ -90,7 +90,15 @@ export async function getCommentRepliesByCommentId(
     if (!commentId) {
       throw new NotFoundError('Comment ID is required');
     }
-    const result = await commentReplyService.getCommentReplies(commentId);
+
+    const limit = Math.max(1, parseInt(req.query.limit as string) || 5);
+    const skip = Math.max(0, parseInt(req.query.skip as string) || 0);
+
+    const result = await commentReplyService.getCommentReplies(
+      commentId,
+      limit,
+      skip,
+    );
     return res.status(200).json({ result });
   } catch (error) {
     logger.error(`Error getting comment replies: ${error}`);

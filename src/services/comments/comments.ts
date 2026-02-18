@@ -278,6 +278,9 @@ export async function getCommentsByPostId(
     const commentCollection: Collection = db.collection(
       COMMENT_COLLECTION_NAME,
     );
+    const commentReplyCollection: Collection = db.collection(
+      COMMENT_REPLY_COLLECTION_NAME,
+    );
 
     const totalCount = await commentCollection.countDocuments({ postId });
 
@@ -288,8 +291,17 @@ export async function getCommentsByPostId(
       .limit(limit)
       .toArray();
 
+    const commentsWithReplyCount = await Promise.all(
+      comments.map(async (comment) => {
+        const replyCount = await commentReplyCollection.countDocuments({
+          commentId: comment._id.toString(),
+        });
+        return { ...comment, replyCount };
+      }),
+    );
+
     return {
-      comments,
+      comments: commentsWithReplyCount,
       pagination: {
         total: totalCount,
         limit,

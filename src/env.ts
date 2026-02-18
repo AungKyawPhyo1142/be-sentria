@@ -23,6 +23,13 @@ export const ENV = {
     process.env.RABBITMQ_NOTIFICATION_QUEUE_NAME ||
     'sentria_send_notification_jobs',
   REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
+
+  // System Bot
+  SYSTEM_BOT_EMAIL: process.env.SYSTEM_BOT_EMAIL || 'system@sentria.app',
+  SYSTEM_BOT_PASSWORD: process.env.SYSTEM_BOT_PASSWORD || 'S3ntr1a_Sys_B0t!2025',
+  SYSTEM_BOT_USERNAME: process.env.SYSTEM_BOT_USERNAME || 'sentria_alerts',
+  SYSTEM_BOT_FIRST_NAME: process.env.SYSTEM_BOT_FIRST_NAME || 'Sentria',
+  SYSTEM_BOT_LAST_NAME: process.env.SYSTEM_BOT_LAST_NAME || 'Alert System',
 };
 
 if (ENV.NODE_ENV === 'local' && !process.env.CORS_ORIGIN) {

@@ -14,6 +14,7 @@
     "prisma:prepare": "pnpm prisma:generate && pnpm prisma:migrate",
     "start:dev": "nodemon --exec node -r ts-node/register -r tsconfig-paths/register --env-file=.env ./src/index.ts",
     "dev:poller": "nodemon --exec node -r ts-node/register -r tsconfig-paths/register --env-file=.env ./src/jobs/usgsPoller.ts",
+    "dev:auto-reporter": "nodemon --exec node -r ts-node/register -r tsconfig-paths/register --env-file=.env ./src/jobs/usgsAutoReporter.ts",
     "start:prod": "node ./build/index.js",
     "format": "prettier . --write --config ./.prettierrc && echo \"Success: format completed\"",
     "lint": "prettier --check . --config ./.prettierrc && eslint --max-warnings 0 . && echo \"Success: your code is clean\"",
@@ -85,7 +86,7 @@
     "typescript-eslint": "^8.0.0"
   },
   "prisma": {
-    "seed": "ts-node ./prisma/seed.ts"
+    "seed": "ts-node -r tsconfig-paths/register ./prisma/seed.ts"
   },
   "lint-staged": {
     "**/*": [

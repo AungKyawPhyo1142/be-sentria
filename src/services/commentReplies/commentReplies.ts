@@ -5,6 +5,7 @@ import { User } from '@prisma/client';
 import { Collection, ObjectId } from 'mongodb';
 import { DISASTER_COLLECTION_NAME } from '../disasterReports/disasterReports';
 import { deleteFromSupabase } from './upload';
+import * as userService from '@/services/user/user';
 
 export interface ValidatedCommentReplyPayload {
   post_id: string;
@@ -19,23 +20,36 @@ export async function createCommentReply(
   payload: ValidatedCommentReplyPayload,
   user: User,
 ) {
+  const requestingUserId = user.id;
+
   try {
+    const userDetails = await userService.details(requestingUserId);
+
+    if (!userDetails) {
+      throw new NotFoundError('User not found for this comment reply');
+    }
+
     const db = await getMongoDB();
     const commentReplyCollection: Collection = db.collection(
       COMMENT_REPLY_COLLECTION_NAME,
     );
 
-    const userId = user.id;
+    const now = new Date();
 
     const mongoCommentReplyDocument = {
-      userId: userId,
+      user: {
+        id: userDetails.id,
+        firstName: userDetails.firstName,
+        lastName: userDetails.lastName,
+        profile_image: userDetails.profile_image || null,
+      },
       postId: payload.post_id,
       commentId: payload.comment_id,
       reply: payload.reply,
       media: payload.media,
-      commentReplyTimestamp: new Date(),
-      systemCreatedAt: new Date(),
-      systemUpdatedAt: new Date(),
+      commentReplyTimestamp: now,
+      systemCreatedAt: now,
+      systemUpdatedAt: now,
     };
 
     const result = await commentReplyCollection.insertOne(
@@ -46,29 +60,46 @@ export async function createCommentReply(
       throw new InternalServerError('Error creating comment reply in mongoDB');
     }
 
-    return {
-      message: `Comment reply for post ID of ${payload.post_id} and comment ID of ${payload.comment_id} created successfully`,
-    };
+    return result;
   } catch (error) {
     logger.error(`Error creating comment reply: ${error}`);
     throw error;
   }
 }
 
-export async function getCommentReplies(commentId: string) {
+export async function getCommentReplies(
+  commentId: string,
+  limit: number,
+  skip: number,
+) {
   try {
     const db = await getMongoDB();
     const commentReplyCollection: Collection = db.collection(
       COMMENT_REPLY_COLLECTION_NAME,
     );
 
-    const result = await commentReplyCollection
+    const totalCount = await commentReplyCollection.countDocuments({
+      commentId: commentId,
+    });
+
+    const replies = await commentReplyCollection
       .find({
         commentId: commentId,
       })
+      .sort({ systemCreatedAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .toArray();
 
-    return result;
+    return {
+      replies,
+      pagination: {
+        total: totalCount,
+        limit,
+        skip,
+        hasMore: skip + replies.length < totalCount,
+      },
+    };
   } catch (error) {
     logger.error(`Error getting comment replies: ${error}`);
     throw error;

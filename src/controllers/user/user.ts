@@ -2,7 +2,7 @@ import { deleteFromSupabase, uploadToSupabase } from '@/services/user/upload';
 import * as userService from '@/services/user/user';
 import { ValidationError } from '@/utils/errors';
 import { NextFunction, Request, Response } from 'express';
-import { ZodError, boolean, date, object, string } from 'zod';
+import { ZodError, boolean, coerce, object, string } from 'zod';
 
 const userDetailSchema = object({
   firstName: string().optional(),
@@ -12,7 +12,7 @@ const userDetailSchema = object({
   email_verified: boolean().optional(),
   password: string().min(8).optional(),
   verified_profile: boolean().optional(),
-  birthday: date().nullable().optional(),
+  birthday: coerce.date().nullable().optional(),
   country: string().optional(),
 });
 
