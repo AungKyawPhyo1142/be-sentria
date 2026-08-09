@@ -312,7 +312,7 @@ export const refreshUserToken = async (refreshToken: string) => {
   try {
     const decoded = verifyRefreshToken(refreshToken);
     const result = await prisma.user.findUnique({
-      where: { id: decoded.userId },
+      where: { id: decoded.userId, deleted_at: null },
     });
     if (!result) {
       throw new AuthenticationError('Access denied');
@@ -322,9 +322,16 @@ export const refreshUserToken = async (refreshToken: string) => {
       refreshToken: signRefreshToken(result.id),
     };
   } catch (error) {
-    logger.error('Error refreshing token', error);
     if (error instanceof AuthenticationError) throw error;
-    throw new AuthenticationError('Invalid refresh token');
+    if (
+      error instanceof jwt.JsonWebTokenError ||
+      error instanceof jwt.TokenExpiredError
+    ) {
+      logger.error('Error refreshing token', error);
+      throw new AuthenticationError('Invalid refresh token');
+    }
+    logger.error('Error refreshing token', error);
+    throw error;
   }
 };
 

@@ -32,9 +32,10 @@ describe('refreshUserToken', () => {
   });
 
   it('rejects an access token used as refresh token', async () => {
-    await expect(
-      refreshUserToken(signAccessToken('user-1')),
-    ).rejects.toBeInstanceOf(AuthenticationError);
+    findUnique.mockResolvedValue({ id: 'user-1' });
+    await expect(refreshUserToken(signAccessToken('user-1'))).rejects.toThrow(
+      'Invalid refresh token',
+    );
   });
 
   it('rejects when the user no longer exists', async () => {
@@ -42,5 +43,15 @@ describe('refreshUserToken', () => {
     await expect(
       refreshUserToken(signRefreshToken('ghost')),
     ).rejects.toBeInstanceOf(AuthenticationError);
+  });
+
+  it('rejects a valid refresh token for a soft-deleted user', async () => {
+    findUnique.mockResolvedValue(null);
+    await expect(
+      refreshUserToken(signRefreshToken('user-1')),
+    ).rejects.toBeInstanceOf(AuthenticationError);
+    expect(findUnique).toHaveBeenCalledWith({
+      where: { id: 'user-1', deleted_at: null },
+    });
   });
 });
