@@ -7,6 +7,7 @@ const router = Router();
 router.get('/', secureRoute(), userController.auth);
 router.post('/register', userController.registerUser);
 router.post('/login', userController.loginUser);
+router.post('/refresh', userController.refresh);
 router.get('/verify-email/:token', userController.verifyEmail);
 router.post('/resend-email', userController.resendEmail);
 router.post('/forgot-password', userController.forgotPassword);

@@ -3,6 +3,11 @@ import { sendEmail } from '@/helpers/sendEmail';
 import prisma from '@/libs/prisma';
 import logger from '@/logger';
 import {
+  signAccessToken,
+  signRefreshToken,
+  verifyRefreshToken,
+} from '@/services/auth/token-service';
+import {
   AuthenticationError,
   ConflictError,
   EmailValidationError,
@@ -299,6 +304,33 @@ const resetPassword = async (token: string, password: string) => {
     };
   } catch (error) {
     logger.error('Error reset password', error);
+    throw error;
+  }
+};
+
+export const refreshUserToken = async (refreshToken: string) => {
+  try {
+    const decoded = verifyRefreshToken(refreshToken);
+    const result = await prisma.user.findUnique({
+      where: { id: decoded.userId, deleted_at: null },
+    });
+    if (!result) {
+      throw new AuthenticationError('Access denied');
+    }
+    return {
+      token: signAccessToken(result.id),
+      refreshToken: signRefreshToken(result.id),
+    };
+  } catch (error) {
+    if (error instanceof AuthenticationError) throw error;
+    if (
+      error instanceof jwt.JsonWebTokenError ||
+      error instanceof jwt.TokenExpiredError
+    ) {
+      logger.error('Error refreshing token', error);
+      throw new AuthenticationError('Invalid refresh token');
+    }
+    logger.error('Error refreshing token', error);
     throw error;
   }
 };

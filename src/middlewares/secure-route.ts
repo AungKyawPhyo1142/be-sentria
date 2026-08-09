@@ -1,27 +1,44 @@
-import { ENV } from '@/env';
 import prisma from '@/libs/prisma';
 import logger from '@/logger';
+import {
+  signAccessToken,
+  signRefreshToken,
+  verifyAccessToken,
+  verifyRefreshToken,
+} from '@/services/auth/token-service';
 import { AuthenticationError } from '@/utils/errors';
 import { NextFunction, Request, Response } from 'express';
-import jwt, { TokenExpiredError } from 'jsonwebtoken';
+import { TokenExpiredError } from 'jsonwebtoken';
 
-interface JwtPayload {
-  userId: string;
-}
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: 'none',
+  secure: true,
+} as const;
+
+const getBearerToken = (req: Request): string | undefined => {
+  const header = req.headers.authorization;
+  return header?.startsWith('Bearer ')
+    ? header.slice('Bearer '.length)
+    : undefined;
+};
 
 const secureRoute = () => {
   return async (req: Request, res: Response, next: NextFunction) => {
-    const token = req.cookies.token;
-    const refreshToken = req.cookies.refreshToken;
+    const cookieToken = req.cookies.token as string | undefined;
+    const bearerToken = getBearerToken(req);
+    const token = cookieToken ?? bearerToken;
+    const isBearer = !cookieToken && !!bearerToken;
+    const refreshToken = req.cookies.refreshToken as string | undefined;
 
     if (!token) {
       return next(new AuthenticationError('Token is required'));
     }
 
     try {
-      const decoded = jwt.verify(token, ENV.JWT_SECRET) as JwtPayload;
+      const decoded = verifyAccessToken(token);
       const result = await prisma.user.findUnique({
-        where: { id: decoded.userId },
+        where: { id: decoded.userId, deleted_at: null },
       });
 
       if (!result) {
@@ -30,42 +47,26 @@ const secureRoute = () => {
       req.user = result;
       return next();
     } catch (error) {
+      if (error instanceof TokenExpiredError && isBearer) {
+        // Bearer clients hold their own refresh token; they must call POST /auth/refresh.
+        return next(new AuthenticationError('Token expired'));
+      }
       if (error instanceof TokenExpiredError && refreshToken) {
         try {
-          const decodedRefreshToken = jwt.verify(
-            refreshToken,
-            ENV.JWT_SECRET,
-          ) as Pick<JwtPayload, 'userId'>;
+          const decodedRefreshToken = verifyRefreshToken(refreshToken);
           const result = await prisma.user.findUnique({
-            where: { id: decodedRefreshToken.userId },
+            where: { id: decodedRefreshToken.userId, deleted_at: null },
           });
           if (!result) {
             return next(new AuthenticationError('Access denied'));
           }
 
-          const newRefreshToken = jwt.sign(
-            {
-              userId: result.id,
-            },
-            ENV.REFRESH_TOKEN_SECRET,
-            { expiresIn: '30d' },
+          res.cookie(
+            'refreshToken',
+            signRefreshToken(result.id),
+            COOKIE_OPTIONS,
           );
-
-          const newToken = jwt.sign({ userId: result.id }, ENV.JWT_SECRET, {
-            expiresIn: '1d',
-          });
-
-          res.cookie('refreshToken', newRefreshToken, {
-            httpOnly: true,
-            sameSite: 'none',
-            secure: true,
-          });
-
-          res.cookie('token', newToken, {
-            httpOnly: true,
-            sameSite: 'none',
-            secure: true,
-          });
+          res.cookie('token', signAccessToken(result.id), COOKIE_OPTIONS);
           req.user = result;
           return next();
         } catch (refreshError) {
@@ -73,12 +74,11 @@ const secureRoute = () => {
           logger.error('Error verifying refresh token', refreshError);
           return next(new AuthenticationError('Invalid refresh token'));
         }
-      } else {
-        res.clearCookie('token');
-        res.clearCookie('refreshToken');
-        logger.error('Error authenticating user:', error);
-        return next(new AuthenticationError('Invalid token'));
       }
+      res.clearCookie('token');
+      res.clearCookie('refreshToken');
+      logger.error('Error authenticating user:', error);
+      return next(new AuthenticationError('Invalid token'));
     }
   };
 };

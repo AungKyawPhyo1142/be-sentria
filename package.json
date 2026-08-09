@@ -6,7 +6,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Success: no test specified\" && exit 0",
+    "test": "vitest run",
     "build": "tsc --build --listEmittedFiles && tsc-alias && echo \"Success: build completed\"",
     "dev": "pnpm install && pnpm prisma:prepare && pnpm start:dev",
     "prisma:generate": "pnpm prisma generate",
@@ -83,7 +83,8 @@
     "tsc-alias": "^1.8.10",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.5.4",
-    "typescript-eslint": "^8.0.0"
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^4.1.10"
   },
   "prisma": {
     "seed": "ts-node -r tsconfig-paths/register ./prisma/seed.ts"
