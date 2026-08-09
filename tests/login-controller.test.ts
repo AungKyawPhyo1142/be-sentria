@@ -52,6 +52,7 @@ describe('loginUser controller', () => {
       token: 'access-abc',
       refreshToken: 'refresh-abc',
     });
+    expect(res.cookie).not.toHaveBeenCalled();
   });
 
   it('keeps the web response unchanged (no tokens in body)', async () => {

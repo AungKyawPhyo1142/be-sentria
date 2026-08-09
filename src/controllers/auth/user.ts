@@ -86,6 +86,16 @@ const loginUser = async (req: Request, res: Response, next: NextFunction) => {
       password,
       rememberMe,
     );
+
+    const isMobileClient = req.headers['x-client'] === 'mobile';
+    if (isMobileClient) {
+      return res.status(200).json({
+        ...userInfo,
+        token,
+        refreshToken: refershToken ?? null,
+      });
+    }
+
     if (refershToken) {
       res.cookie('refreshToken', refershToken, {
         httpOnly: true,
@@ -99,14 +109,6 @@ const loginUser = async (req: Request, res: Response, next: NextFunction) => {
       secure: true,
     });
 
-    const isMobileClient = req.headers['x-client'] === 'mobile';
-    if (isMobileClient) {
-      return res.status(200).json({
-        ...userInfo,
-        token,
-        refreshToken: refershToken ?? null,
-      });
-    }
     return res.status(200).json(userInfo);
   } catch (error) {
     if (error instanceof ZodError) {

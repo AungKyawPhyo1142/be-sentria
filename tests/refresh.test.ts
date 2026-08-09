@@ -54,4 +54,11 @@ describe('refreshUserToken', () => {
       where: { id: 'user-1', deleted_at: null },
     });
   });
+
+  it('propagates infra errors instead of downgrading them to AuthenticationError', async () => {
+    findUnique.mockRejectedValue(new Error('db down'));
+    await expect(
+      refreshUserToken(signRefreshToken('user-1')),
+    ).rejects.not.toBeInstanceOf(AuthenticationError);
+  });
 });
