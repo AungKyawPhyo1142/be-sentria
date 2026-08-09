@@ -3,6 +3,11 @@ import { sendEmail } from '@/helpers/sendEmail';
 import prisma from '@/libs/prisma';
 import logger from '@/logger';
 import {
+  signAccessToken,
+  signRefreshToken,
+  verifyRefreshToken,
+} from '@/services/auth/token-service';
+import {
   AuthenticationError,
   ConflictError,
   EmailValidationError,
@@ -300,6 +305,26 @@ const resetPassword = async (token: string, password: string) => {
   } catch (error) {
     logger.error('Error reset password', error);
     throw error;
+  }
+};
+
+export const refreshUserToken = async (refreshToken: string) => {
+  try {
+    const decoded = verifyRefreshToken(refreshToken);
+    const result = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+    });
+    if (!result) {
+      throw new AuthenticationError('Access denied');
+    }
+    return {
+      token: signAccessToken(result.id),
+      refreshToken: signRefreshToken(result.id),
+    };
+  } catch (error) {
+    logger.error('Error refreshing token', error);
+    if (error instanceof AuthenticationError) throw error;
+    throw new AuthenticationError('Invalid refresh token');
   }
 };
 

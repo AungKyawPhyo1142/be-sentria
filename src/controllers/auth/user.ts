@@ -180,6 +180,23 @@ const resetPassword = async (
   }
 };
 
+const refreshSchema = object({
+  refreshToken: string().min(1),
+});
+
+const refresh = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { refreshToken } = refreshSchema.parse(req.body);
+    const tokens = await userService.refreshUserToken(refreshToken);
+    return res.status(200).json(tokens);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return next(new ValidationError(error.issues));
+    }
+    return next(error);
+  }
+};
+
 export {
   registerUser,
   loginUser,
@@ -188,4 +205,5 @@ export {
   resendEmail,
   forgotPassword,
   resetPassword,
+  refresh,
 };
