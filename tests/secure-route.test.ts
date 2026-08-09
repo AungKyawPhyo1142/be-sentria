@@ -108,4 +108,56 @@ describe('secureRoute', () => {
     expect(err).toBeInstanceOf(AuthenticationError);
     expect(err.message).toBe('Token is required');
   });
+
+  it('rejects an expired cookie token with no refresh cookie as "Invalid token" and clears both cookies', async () => {
+    const expired = jwt.sign({ userId: 'user-1' }, ENV.JWT_SECRET, {
+      expiresIn: -10,
+    });
+    const req = makeReq({ cookies: { token: expired } } as never);
+    const res = makeRes();
+    const next = vi.fn() as NextFunction;
+
+    await secureRoute()(req, res, next);
+
+    const err = (next as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(err).toBeInstanceOf(AuthenticationError);
+    expect(err.message).toBe('Invalid token');
+    expect(res.clearCookie).toHaveBeenCalledWith('token');
+    expect(res.clearCookie).toHaveBeenCalledWith('refreshToken');
+  });
+
+  it('prefers the cookie token when both cookie and Bearer are present, and never verifies the Bearer token', async () => {
+    findUnique.mockResolvedValue(USER);
+    const req = makeReq({
+      cookies: { token: signAccessToken('user-1') },
+      // Deliberately unverifiable: if precedence ever flipped to the Bearer
+      // token, verifying this would throw and next() would receive an error.
+      headers: { authorization: 'Bearer not-a-valid-jwt' },
+    } as never);
+    const next = vi.fn() as NextFunction;
+
+    await secureRoute()(req, makeRes(), next);
+
+    expect(req.user).toEqual(USER);
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it('rejects an expired cookie token with an invalid refresh cookie as "Invalid refresh token" and clears only refreshToken', async () => {
+    const expired = jwt.sign({ userId: 'user-1' }, ENV.JWT_SECRET, {
+      expiresIn: -10,
+    });
+    const req = makeReq({
+      cookies: { token: expired, refreshToken: 'not-a-valid-refresh-token' },
+    } as never);
+    const res = makeRes();
+    const next = vi.fn() as NextFunction;
+
+    await secureRoute()(req, res, next);
+
+    const err = (next as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(err).toBeInstanceOf(AuthenticationError);
+    expect(err.message).toBe('Invalid refresh token');
+    expect(res.clearCookie).toHaveBeenCalledWith('refreshToken');
+    expect(res.clearCookie).not.toHaveBeenCalledWith('token');
+  });
 });
