@@ -38,7 +38,7 @@ const secureRoute = () => {
     try {
       const decoded = verifyAccessToken(token);
       const result = await prisma.user.findUnique({
-        where: { id: decoded.userId },
+        where: { id: decoded.userId, deleted_at: null },
       });
 
       if (!result) {
@@ -55,7 +55,7 @@ const secureRoute = () => {
         try {
           const decodedRefreshToken = verifyRefreshToken(refreshToken);
           const result = await prisma.user.findUnique({
-            where: { id: decodedRefreshToken.userId },
+            where: { id: decodedRefreshToken.userId, deleted_at: null },
           });
           if (!result) {
             return next(new AuthenticationError('Access denied'));

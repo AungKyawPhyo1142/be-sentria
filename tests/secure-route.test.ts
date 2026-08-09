@@ -160,4 +160,62 @@ describe('secureRoute', () => {
     expect(res.clearCookie).toHaveBeenCalledWith('refreshToken');
     expect(res.clearCookie).not.toHaveBeenCalledWith('token');
   });
+
+  it('rejects a valid, unexpired Bearer access token belonging to a soft-deleted user', async () => {
+    // The mock resolves null unconditionally, which is exactly what a
+    // deleted_at:null-filtered lookup for a soft-deleted user would return.
+    // That means the "rejected" assertion below would pass even against the
+    // pre-fix code (which never filters on deleted_at) as long as the mock
+    // returns null anyway. The discriminating assertion is the one on the
+    // findUnique call args: it proves the middleware actually included
+    // deleted_at: null in the where clause at this call site, not just that
+    // it handled a null result correctly.
+    findUnique.mockResolvedValue(null);
+    const req = makeReq({
+      headers: { authorization: `Bearer ${signAccessToken('user-1')}` },
+    } as never);
+    const next = vi.fn() as NextFunction;
+
+    await secureRoute()(req, makeRes(), next);
+
+    const err = (next as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(err).toBeInstanceOf(AuthenticationError);
+    expect(err.message).toBe('Access denied');
+    // Discriminating assertion: fails pre-fix because the middleware calls
+    // findUnique with only { id: decoded.userId }, omitting deleted_at.
+    expect(findUnique).toHaveBeenCalledWith({
+      where: { id: 'user-1', deleted_at: null },
+    });
+  });
+
+  it('rejects an expired cookie token plus a valid refresh cookie belonging to a soft-deleted user, and mints no new cookies', async () => {
+    // Same caveat as above: with an unconditional null mock, "rejected" and
+    // "no cookies minted" both hold even pre-fix, because the existing
+    // !result branch already declines to mint cookies for a null lookup.
+    // The discriminating assertion is the findUnique call-args check: it is
+    // the only one that fails against the pre-fix code, which looks up the
+    // refresh-token user by { id: decodedRefreshToken.userId } alone.
+    findUnique.mockResolvedValue(null);
+    const expired = jwt.sign({ userId: 'user-1' }, ENV.JWT_SECRET, {
+      expiresIn: -10,
+    });
+    const req = makeReq({
+      cookies: { token: expired, refreshToken: signRefreshToken('user-1') },
+    } as never);
+    const res = makeRes();
+    const next = vi.fn() as NextFunction;
+
+    await secureRoute()(req, res, next);
+
+    const err = (next as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(err).toBeInstanceOf(AuthenticationError);
+    expect(err.message).toBe('Access denied');
+    expect(res.cookie).not.toHaveBeenCalled();
+    // Discriminating assertion: fails pre-fix because the middleware calls
+    // findUnique with only { id: decodedRefreshToken.userId }, omitting
+    // deleted_at.
+    expect(findUnique).toHaveBeenCalledWith({
+      where: { id: 'user-1', deleted_at: null },
+    });
+  });
 });
